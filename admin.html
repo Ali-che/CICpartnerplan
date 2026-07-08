@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>管理后台 · Partner Course Planner</title>
+<style>
+  :root{
+    --ink:#1B2433;--ink-soft:#4A5568;--muted:#6B7686;--paper:#F3F4F1;--surface:#FFFFFF;
+    --border:#DCE0D8;--border-strong:#C3C9BD;--accent:#2C6E5B;--accent-deep:#1F4F41;--accent-soft:#E5EEE9;
+    --amber:#A8632A;--amber-soft:#F4E9DD;--danger:#9E3B36;--danger-soft:#F3E2E0;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Songti SC",Georgia,serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,"Segoe UI",system-ui,sans-serif;
+    --mono:"SF Mono","JetBrains Mono","Roboto Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:15px;-webkit-font-smoothing:antialiased;}
+  .page{padding:clamp(1.2rem,3vw,2.5rem) 1rem 5rem;}
+  .wrap{max-width:940px;margin:0 auto;}
+  .top{border-top:3px solid var(--ink);padding-top:1.1rem;margin-bottom:1.4rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.6rem;}
+  .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem;}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.4rem,4vw,2rem);margin:0;letter-spacing:-.01em;}
+  .top a{font-size:.82rem;color:var(--accent-deep);text-decoration:none;font-weight:600;}
+  .top a:hover{text-decoration:underline;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.2rem;margin-bottom:1.1rem;}
+  .card-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.85rem;}
+
+  .fld{display:flex;flex-direction:column;gap:.3rem;min-width:0;}
+  .fld label{font-size:.74rem;color:var(--ink-soft);font-weight:600;}
+  input[type=text],input[type=password]{font-family:var(--sans);font-size:.88rem;color:var(--ink);background:var(--paper);border:1px solid var(--border-strong);border-radius:6px;padding:.5rem .65rem;}
+  input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .mono{font-family:var(--mono);font-size:.82rem;}
+
+  .btn{font-family:var(--sans);font-size:.85rem;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:7px;padding:.55rem 1.05rem;cursor:pointer;white-space:nowrap;}
+  .btn:hover{background:var(--accent-deep);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .row-end{display:flex;gap:.7rem;align-items:flex-end;flex-wrap:wrap;}
+
+  .status{font-family:var(--mono);font-size:.76rem;margin-top:.7rem;padding:.5rem .7rem;border-radius:6px;display:none;}
+  .status.show{display:block;}
+  .status.ok{background:var(--accent-soft);color:var(--accent-deep);}
+  .status.err{background:var(--danger-soft);color:var(--danger);}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-bottom:1.1rem;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem .9rem;}
+  .stat .n{font-family:var(--mono);font-size:1.5rem;font-weight:700;line-height:1;}
+  .stat .l{font-size:.72rem;color:var(--muted);margin-top:.3rem;}
+
+  .tabs{display:flex;gap:.4rem;margin-bottom:1rem;}
+  .tab{font-size:.85rem;font-weight:600;padding:.45rem .9rem;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-soft);cursor:pointer;}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:520px;}
+  th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+  th{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#FAFBF9;}
+  td.mono{font-family:var(--mono);font-size:.78rem;}
+  td.num{text-align:center;font-family:var(--mono);}
+  .pill{font-size:.68rem;font-weight:600;padding:.15em .6em;border-radius:20px;white-space:nowrap;}
+  .pill.on{background:var(--accent-soft);color:var(--accent-deep);}
+  .pill.off{background:var(--danger-soft);color:var(--danger);}
+  .mini{font-family:var(--sans);font-size:.74rem;font-weight:600;padding:.28rem .55rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface);color:var(--accent-deep);cursor:pointer;margin-right:.35rem;}
+  .mini:hover{background:var(--accent-soft);}
+  .mini.del{color:var(--danger);}
+  .mini.del:hover{background:var(--danger-soft);}
+
+  .hint{font-size:.78rem;color:var(--muted);margin-top:.55rem;}
+  .empty{color:var(--muted);text-align:center;padding:1.2rem;}
+  details.adv summary{font-size:.76rem;color:var(--muted);cursor:pointer;margin-top:.7rem;}
+  .toast{position:fixed;left:50%;bottom:2rem;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.85rem;padding:.6rem 1.1rem;border-radius:8px;box-shadow:0 6px 22px rgba(27,36,51,.28);z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  @media (max-width:560px){.stats{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <div class="eyebrow">Admin · 管理后台</div>
+      <h1>合作校帐号与项目管理</h1>
+    </div>
+    <a href="./index.html">← 前往学校端</a>
+  </div>
+
+  <!-- 登入 -->
+  <div class="card" id="loginCard">
+    <div class="card-label">管理员登入</div>
+    <div class="row-end">
+      <div class="fld" style="flex:1;min-width:180px;"><label for="apin">管理员 PIN</label><input id="apin" class="mono" type="password" placeholder="输入管理员 PIN" autocomplete="off" /></div>
+      <button class="btn" id="loginBtn">登入</button>
+    </div>
+    <details class="adv">
+      <summary>高级：Supabase 连接（一般不用改）</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:.6rem;">
+        <div class="fld"><label>Supabase URL</label><input id="supaUrl" class="mono" type="text" value="https://ahygebtmavcmzqdwwhbs.supabase.co" /></div>
+        <div class="fld"><label>Publishable Key</label><input id="supaKey" class="mono" type="text" value="sb_publishable_hWK78P_LTzHgKcuFMI2FVg_44Yw_tsZ" /></div>
+      </div>
+    </details>
+    <div class="status" id="loginStatus"></div>
+  </div>
+
+  <!-- 后台主体 -->
+  <div id="admin" style="display:none;">
+    <div class="stats">
+      <div class="stat"><div class="n" id="sSchools">0</div><div class="l">合作学校</div></div>
+      <div class="stat"><div class="n" id="sActive">0</div><div class="l">启用中</div></div>
+      <div class="stat"><div class="n" id="sProjects">0</div><div class="l">项目总数</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab on" data-tab="accounts">帐号管理</button>
+      <button class="tab" data-tab="projects">项目总览</button>
+    </div>
+
+    <!-- 帐号管理 -->
+    <div id="tab-accounts">
+      <div class="card">
+        <div class="card-label">新增合作校帐号</div>
+        <div class="row-end">
+          <div class="fld" style="flex:1;min-width:140px;"><label>学校名称</label><input id="newSchool" type="text" placeholder="例：示例大学" /></div>
+          <div class="fld" style="flex:1;min-width:140px;"><label>登入 PIN</label><input id="newPin" class="mono" type="text" placeholder="给这所学校的 PIN" /></div>
+          <button class="btn" id="addBtn">新增</button>
+        </div>
+        <p class="hint">把「学校名称 + PIN」交给该校老师，他们用这个 PIN 在学校端登入，只看得到自己的项目。</p>
+      </div>
+      <div class="card">
+        <div class="card-label">合作校帐号</div>
+        <div class="table-scroll"><table id="accTable"><thead>
+          <tr><th>学校</th><th>PIN</th><th style="text-align:center">项目</th><th>状态</th><th>操作</th></tr>
+        </thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- 项目总览 -->
+    <div id="tab-projects" style="display:none;">
+      <div class="card">
+        <div class="card-label">所有合作校的项目</div>
+        <div class="table-scroll"><table id="projTable"><thead>
+          <tr><th>项目</th><th>学校</th><th>专业·版本</th><th style="text-align:center">课数</th><th>更新时间</th></tr>
+        </thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s);};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>]/g,function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]);});};
+  var adminPin=null, toastTimer=null;
+
+  function toast(m){var e=$('#toast');e.textContent=m;e.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){e.classList.remove('show');},2200);}
+  function setLoginStatus(k,m){var e=$('#loginStatus');e.className='status show '+k;e.innerHTML=m;}
+
+  function rpc(fn,body){
+    var url=$('#supaUrl').value.trim().replace(/\/+$/,'');
+    var key=$('#supaKey').value.trim();
+    return fetch(url+'/rest/v1/rpc/'+fn,{
+      method:'POST',
+      headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).then(function(res){
+      if(!res.ok){return res.text().then(function(t){throw new Error('HTTP '+res.status+' '+t.slice(0,140));});}
+      return res.json();
+    });
+  }
+
+  function login(){
+    var pin=$('#apin').value.trim();
+    if(!pin){setLoginStatus('err','请输入管理员 PIN。');return;}
+    $('#loginBtn').disabled=true;setLoginStatus('ok','验证中…');
+    rpc('admin_authenticate',{p_admin:pin}).then(function(d){
+      if(!d||d.error){setLoginStatus('err','登入失败：'+((d&&d.error)||'未知')+'（PIN 可能错误，或未跑 partner_admin.sql）');$('#loginBtn').disabled=false;return;}
+      adminPin=pin;
+      $('#loginCard').style.display='none';
+      $('#admin').style.display='';
+      renderAccounts(d.partners||[]);
+      loadProjects();
+    }).catch(function(err){setLoginStatus('err','登入失败：'+esc(err.message));$('#loginBtn').disabled=false;});
+  }
+
+  function refreshAccounts(){
+    rpc('admin_authenticate',{p_admin:adminPin}).then(function(d){renderAccounts((d&&d.partners)||[]);}).catch(function(){});
+  }
+  function renderAccounts(list){
+    $('#sSchools').textContent=list.length;
+    $('#sActive').textContent=list.filter(function(p){return p.active;}).length;
+    var tb=$('#accTable').querySelector('tbody');
+    if(!list.length){tb.innerHTML='<tr><td colspan="5" class="empty">还没有合作校帐号。用上方「新增」。</td></tr>';return;}
+    tb.innerHTML='';
+    list.forEach(function(p){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+esc(p.school_name||'（未命名）')+'</td>'+
+        '<td class="mono">'+esc(p.pin)+'</td>'+
+        '<td class="num">'+(p.project_count||0)+'</td>'+
+        '<td>'+(p.active?'<span class="pill on">启用</span>':'<span class="pill off">停用</span>')+'</td>'+
+        '<td><button class="mini" data-toggle="'+esc(p.pin)+'" data-act="'+(p.active?'0':'1')+'">'+(p.active?'停用':'启用')+'</button>'+
+        '<button class="mini del" data-del="'+esc(p.pin)+'">删除</button></td>';
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll('[data-toggle]').forEach(function(b){b.addEventListener('click',function(){
+      rpc('admin_set_partner_active',{p_admin:adminPin,p_pin:b.getAttribute('data-toggle'),p_active:b.getAttribute('data-act')==='1'})
+        .then(function(){toast('已更新');refreshAccounts();}).catch(function(e){toast('失败：'+e.message);});
+    });});
+    tb.querySelectorAll('[data-del]').forEach(function(b){b.addEventListener('click',function(){
+      if(!confirm('删除这所学校及其所有项目？无法撤销。'))return;
+      rpc('admin_delete_partner',{p_admin:adminPin,p_pin:b.getAttribute('data-del')})
+        .then(function(){toast('已删除');refreshAccounts();loadProjects();}).catch(function(e){toast('失败：'+e.message);});
+    });});
+  }
+
+  function addPartner(){
+    var school=$('#newSchool').value.trim();
+    var pin=$('#newPin').value.trim();
+    if(!pin){toast('请填 PIN');return;}
+    $('#addBtn').disabled=true;
+    rpc('admin_add_partner',{p_admin:adminPin,p_pin:pin,p_school:school}).then(function(d){
+      $('#addBtn').disabled=false;
+      if(d&&d.error){toast('失败：'+d.error);return;}
+      $('#newSchool').value='';$('#newPin').value='';toast('已新增');refreshAccounts();
+    }).catch(function(e){$('#addBtn').disabled=false;toast('失败：'+e.message);});
+  }
+
+  function loadProjects(){
+    rpc('admin_list_all_projects',{p_admin:adminPin}).then(function(d){
+      var list=(d&&d.projects)||[];
+      $('#sProjects').textContent=list.length;
+      var tb=$('#projTable').querySelector('tbody');
+      if(!list.length){tb.innerHTML='<tr><td colspan="5" class="empty">还没有任何项目。</td></tr>';return;}
+      tb.innerHTML='';
+      list.forEach(function(p){
+        var d2=(p.updated_at||'').replace('T',' ').slice(0,16);
+        var tr=document.createElement('tr');
+        tr.innerHTML='<td>'+esc(p.project_name||'（未命名）')+'</td>'+
+          '<td>'+esc(p.school_name||p.pin)+'</td>'+
+          '<td class="mono">'+esc(p.dept||'')+' · '+esc(p.version||'')+'</td>'+
+          '<td class="num">'+(p.course_count||0)+'</td>'+
+          '<td class="mono">'+esc(d2)+'</td>';
+        tb.appendChild(tr);
+      });
+    }).catch(function(){});
+  }
+
+  // tabs
+  document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+    t.classList.add('on');
+    var name=t.getAttribute('data-tab');
+    $('#tab-accounts').style.display=name==='accounts'?'':'none';
+    $('#tab-projects').style.display=name==='projects'?'':'none';
+    if(name==='projects')loadProjects();
+  });});
+
+  $('#loginBtn').addEventListener('click',login);
+  $('#apin').addEventListener('keydown',function(e){if(e.key==='Enter')login();});
+  $('#addBtn').addEventListener('click',addPartner);
+})();
+</script>
+</body>
+</html>

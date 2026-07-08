@@ -130,17 +130,17 @@
 
   <div class="top">
     <div class="eyebrow">Partner Course Planner · 校校合作</div>
-    <h1>校校合作课程规划系统<span class="pill-demo" id="modeTag">示范数据</span></h1>
+    <h1>校校合作课程规划系统<span class="pill-demo" id="modeTag">未登入</span></h1>
     <p class="sub">合作校老师从课程库（catalog）勾选课程，生成分专业、分模块的课程架构表。</p>
     <div class="flowline">流程 · <b>连接</b> → 填资料 → <b>选专业</b> → <b>选版本</b> → 勾课 → 生成结构表</div>
   </div>
 
-  <!-- Step 0: connect -->
+  <!-- Step 0: 学校登入 -->
   <div class="card">
-    <div class="card-label"><span class="step cfg">0</span>连接数据库 · 载入 catalog</div>
+    <div class="card-label"><span class="step cfg">0</span>学校登入<a href="./admin.html" style="margin-left:auto;font-size:.72rem;color:var(--accent-deep);text-decoration:none;font-weight:600;text-transform:none;letter-spacing:0;">管理员入口 →</a></div>
     <div class="conn-row">
-      <div class="fld"><label for="pin">存取 PIN</label><input id="pin" class="mono" type="password" placeholder="输入 PIN" autocomplete="off" /></div>
-      <button class="btn" id="connectBtn">连接并载入</button>
+      <div class="fld"><label for="pin">学校登入 PIN</label><input id="pin" class="mono" type="password" placeholder="输入贵校的登入 PIN" autocomplete="off" /></div>
+      <button class="btn" id="connectBtn">登入</button>
     </div>
     <label class="cb" style="margin-top:.6rem;"><input type="checkbox" id="rememberPin" /> 在这台电脑记住 PIN</label>
     <details class="advanced">
@@ -151,8 +151,10 @@
       </div>
     </details>
     <div class="status" id="connStatus"></div>
-    <p class="hint">用合作校<b>专属 PIN</b>，经 <code>partner_authenticate</code> 只读取 catalog（与排课系统的 PIN 完全分开）。未连接时下方用少量示范数据。</p>
+    <p class="hint">用贵校<b>专属 PIN</b> 登入，只看得到自己的项目（与排课系统完全分开）。没有 PIN 请向管理员索取。</p>
   </div>
+
+  <div id="appArea" style="display:none;">
 
   <!-- 我的项目（已保存）-->
   <div class="card" id="myProjectsCard" style="display:none;">
@@ -199,6 +201,8 @@
   </div>
 
   <div id="output"></div>
+
+  </div><!-- /appArea -->
 
 </div>
 </div>
@@ -249,7 +253,7 @@
   function setStatus(kind,msg){var el=$('#connStatus');el.className='status show '+kind;el.innerHTML=msg;}
   function setMode(){
     var t=$('#modeTag');
-    t.textContent=connected?('已载入 '+CATALOG.length+' 门课'):'示范数据';
+    t.textContent=connected?('已载入 '+CATALOG.length+' 门课'):'未登入';
     t.style.background=connected?'var(--accent-soft)':'var(--amber-soft)';
     t.style.color=connected?'var(--accent-deep)':'var(--amber)';
   }
@@ -291,6 +295,7 @@
       else{try{localStorage.removeItem('cpp_pin');}catch(e){}}
       setStatus('ok','✓ 已载入 catalog：共 <b>'+CATALOG.length+'</b> 门课。');
       setMode();populateDept();
+      $('#appArea').style.display='';
       $('#myProjectsCard').style.display='';
       loadProjectList();updateTally();
     }).catch(function(err){
