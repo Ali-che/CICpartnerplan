@@ -76,6 +76,7 @@
   .course .code{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-right:.4rem;}
   .course .zh{font-weight:600;font-size:.88rem;}
   .course .en{color:var(--muted);font-size:.76rem;font-style:italic;}
+  .course .desc{display:block;color:var(--ink-soft);font-size:.76rem;margin-top:.15rem;line-height:1.4;}
   .course .map{font-family:var(--mono);font-size:.68rem;color:var(--amber);background:var(--amber-soft);padding:.1em .45em;border-radius:4px;margin-left:.35rem;}
   .course .cr{font-family:var(--mono);font-size:.8rem;color:var(--accent-deep);font-variant-numeric:tabular-nums;white-space:nowrap;}
   .course .cr b{font-size:.95rem;}
@@ -244,6 +245,10 @@
     en:function(c){return c.en!=null?c.en:(c.course_en!=null?c.course_en:(c.name_en!=null?c.name_en:''));},
     credit:function(c){return num(c.credit!=null?c.credit:(c.course_cr!=null?c.course_cr:(c.cr!=null?c.cr:(c.credits!=null?c.credits:0))));},
     map:function(c){return c.map!=null?c.map:(c.mapping!=null?c.mapping:'');},
+    desc:function(c){
+      var v=c.note||c.desc||c.description||c.intro||c.summary||c.remark||c.course_desc||'';
+      return String(v).trim();
+    },
     id:function(c){return c.id!=null?String(c.id):(F.dept(c)+'|'+F.ver(c)+'|'+F.code(c));}
   };
   // 稳定业务键：dept|version|code —— 让「实时 catalog 行」与「保存的快照行」能对上
@@ -354,11 +359,12 @@
       bh.innerHTML='<span>'+esc(b)+'</span>'+(bc!=null?'<span class="bc">'+esc(bc)+' cr</span>':'');
       libEl.appendChild(bh);
       blocks[b].forEach(function(c){
-        var id=keyOf(c),mp=F.map(c);
+        var id=keyOf(c),mp=F.map(c),ds=F.desc(c);
         var row=document.createElement('label');row.className='course'+(selected[id]?' on':'');
         row.innerHTML='<input type="checkbox" '+(selected[id]?'checked':'')+' />'+
           '<span class="info"><span class="code">'+esc(F.code(c))+'</span><span class="zh">'+esc(F.zh(c))+'</span>'+
-          (mp?'<span class="map">'+esc(mp)+'</span>':'')+'<br><span class="en">'+esc(F.en(c))+'</span></span>'+
+          (mp?'<span class="map">'+esc(mp)+'</span>':'')+'<br><span class="en">'+esc(F.en(c))+'</span>'+
+          (ds?'<span class="desc">'+esc(ds)+'</span>':'')+'</span>'+
           '<span class="cr"><b>'+F.credit(c)+'</b> 学分</span>';
         var cb=row.querySelector('input');
         cb.addEventListener('change',function(){

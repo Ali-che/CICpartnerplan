@@ -166,11 +166,12 @@
 <div class="modal-bg" id="blockModal">
   <div class="modal">
     <div class="modal-h">开放板块 · <span id="bmSchool"></span></div>
-    <div class="modal-hint">勾选允许这所学校勾选的板块。<b>全不勾 = 开放全部板块</b>。</div>
+    <div class="modal-hint">先选专业，再勾选要开放的板块。<b>全不勾 = 开放全部</b>。跨专业勾选会累积。</div>
+    <div class="fld" style="margin-bottom:.8rem;"><label>专业</label><select id="bmDept"></select></div>
     <div class="block-list" id="bmList"></div>
     <div class="modal-actions">
-      <button class="mini" id="bmAll">全选</button>
-      <button class="mini" id="bmNone">全不选</button>
+      <button class="mini" id="bmAll">本专业全选</button>
+      <button class="mini" id="bmNone">本专业全不选</button>
       <span style="flex:1"></span>
       <button class="btn" id="bmSave">保存</button>
       <button class="mini" id="bmCancel">取消</button>
@@ -267,34 +268,48 @@
     }).catch(function(e){$('#addBtn').disabled=false;toast('失败：'+e.message);});
   }
 
-  // ---------- 板块白名单 ----------
+  // ---------- 板块白名单（先选专业，再列板块）----------
+  var BLOCKS_BY_DEPT={}, BM_DEPTS=[], bmPending={};
   function loadBlocks(){
     rpc('admin_list_blocks',{p_admin:adminPin}).then(function(d){
-      ALL_BLOCKS=(d&&d.blocks)||[];
+      var pairs=(d&&d.blocks)||[];
+      BLOCKS_BY_DEPT={};BM_DEPTS=[];
+      pairs.forEach(function(x){
+        var dept,block;
+        if(typeof x==='string'){dept='（全部）';block=x;}       // 兼容旧格式
+        else{dept=x.dept||'（未分类）';block=x.block;}
+        if(!BLOCKS_BY_DEPT[dept]){BLOCKS_BY_DEPT[dept]=[];BM_DEPTS.push(dept);}
+        if(BLOCKS_BY_DEPT[dept].indexOf(block)<0)BLOCKS_BY_DEPT[dept].push(block);
+      });
     }).catch(function(){});
   }
   function openBlockEditor(pin){
     var p=PARTNERS[pin];if(!p)return;
     bmPin=pin;
     $('#bmSchool').textContent=(p.school_name||'')+'（'+pin+'）';
-    var cur={};(p.allowed_blocks||[]).forEach(function(b){cur[b]=1;});
-    var box=$('#bmList');
-    if(!ALL_BLOCKS.length){box.innerHTML='<div class="empty">板块清单载入中…请稍后重开。</div>';loadBlocks();}
-    else{
-      box.innerHTML='';
-      ALL_BLOCKS.forEach(function(b){
-        var lab=document.createElement('label');lab.className='block-item';
-        lab.innerHTML='<input type="checkbox" '+(cur[b]?'checked':'')+' value="'+esc(b)+'" /> <span>'+esc(b)+'</span>';
-        box.appendChild(lab);
-      });
-    }
+    bmPending={};(p.allowed_blocks||[]).forEach(function(b){bmPending[b]=1;});
+    if(!BM_DEPTS.length){$('#bmList').innerHTML='<div class="empty">板块清单载入中…请关掉重开。</div>';loadBlocks();$('#blockModal').classList.add('show');return;}
+    var sel=$('#bmDept');
+    sel.innerHTML=BM_DEPTS.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
+    renderBmBlocks(BM_DEPTS[0]);
     $('#blockModal').classList.add('show');
+  }
+  function renderBmBlocks(dept){
+    var box=$('#bmList'),list=BLOCKS_BY_DEPT[dept]||[];
+    box.innerHTML='';
+    if(!list.length){box.innerHTML='<div class="empty">此专业没有板块。</div>';return;}
+    list.forEach(function(b){
+      var lab=document.createElement('label');lab.className='block-item';
+      lab.innerHTML='<input type="checkbox" '+(bmPending[b]?'checked':'')+' value="'+esc(b)+'" /> <span>'+esc(b)+'</span>';
+      var cb=lab.querySelector('input');
+      cb.addEventListener('change',function(){if(cb.checked)bmPending[b]=1;else delete bmPending[b];});
+      box.appendChild(lab);
+    });
   }
   function closeBlockEditor(){$('#blockModal').classList.remove('show');bmPin=null;}
   function saveBlocks(){
     if(!bmPin)return;
-    var arr=[];
-    $('#bmList').querySelectorAll('input:checked').forEach(function(cb){arr.push(cb.value);});
+    var arr=Object.keys(bmPending);
     $('#bmSave').disabled=true;
     rpc('admin_set_partner_blocks',{p_admin:adminPin,p_pin:bmPin,p_blocks:arr}).then(function(d){
       $('#bmSave').disabled=false;
@@ -343,8 +358,9 @@
   $('#addBtn').addEventListener('click',addPartner);
   $('#bmSave').addEventListener('click',saveBlocks);
   $('#bmCancel').addEventListener('click',closeBlockEditor);
-  $('#bmAll').addEventListener('click',function(){$('#bmList').querySelectorAll('input').forEach(function(cb){cb.checked=true;});});
-  $('#bmNone').addEventListener('click',function(){$('#bmList').querySelectorAll('input').forEach(function(cb){cb.checked=false;});});
+  $('#bmDept').addEventListener('change',function(){renderBmBlocks(this.value);});
+  $('#bmAll').addEventListener('click',function(){var d=$('#bmDept').value;(BLOCKS_BY_DEPT[d]||[]).forEach(function(b){bmPending[b]=1;});renderBmBlocks(d);});
+  $('#bmNone').addEventListener('click',function(){var d=$('#bmDept').value;(BLOCKS_BY_DEPT[d]||[]).forEach(function(b){delete bmPending[b];});renderBmBlocks(d);});
   $('#blockModal').addEventListener('click',function(e){if(e.target===$('#blockModal'))closeBlockEditor();});
 })();
 </script>
