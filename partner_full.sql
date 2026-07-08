@@ -34,6 +34,14 @@ create table if not exists public.app_admins (
 );
 alter table public.app_admins enable row level security;
 
+create table if not exists public.partner_scope (   -- 每校开放范围：专业×板块
+  pin   text not null,
+  dept  text not null,
+  block text not null,
+  primary key (pin, dept, block)
+);
+alter table public.partner_scope enable row level security;
+
 -- ========== 内部：验管理员 ==========
 create or replace function public.admin_check(p_admin text)
 returns boolean language sql security definer set search_path = public stable as $$
@@ -43,13 +51,16 @@ $$;
 -- ========== 学校端：登入并读 catalog（按白名单过滤）==========
 create or replace function public.partner_authenticate(p_pin text)
 returns json language plpgsql security definer set search_path = public as $$
-declare v_active boolean; v_blocks text[]; v_catalog json;
+declare v_active boolean; v_has boolean; v_catalog json;
 begin
-  select active, allowed_blocks into v_active, v_blocks from partner_pins where pin = p_pin;
+  select active into v_active from partner_pins where pin = p_pin;
   if v_active is not true then return json_build_object('error','invalid_pin'); end if;
+  select exists(select 1 from partner_scope where pin = p_pin) into v_has;
   select coalesce(json_agg(t), '[]'::json) into v_catalog
-  from ( select * from public.catalog
-         where v_blocks is null or array_length(v_blocks,1) is null or block = any(v_blocks) ) t;
+  from ( select * from public.catalog c
+         where (not v_has)
+            or exists(select 1 from partner_scope s
+                      where s.pin = p_pin and s.dept = c.dept and s.block = c.block) ) t;
   return json_build_object('catalog', v_catalog);
 end; $$;
 
@@ -118,8 +129,10 @@ declare v json;
 begin
   if not admin_check(p_admin) then return json_build_object('error','invalid_admin'); end if;
   select coalesce(json_agg(t order by t.created_at desc),'[]'::json) into v
-  from (select p.pin,p.school_name,p.active,p.allowed_blocks,p.created_at,
-               (select count(*) from partner_projects pp where pp.pin=p.pin) as project_count
+  from (select p.pin,p.school_name,p.active,p.created_at,
+               (select count(*) from partner_projects pp where pp.pin=p.pin) as project_count,
+               (select count(*) from partner_scope s where s.pin=p.pin) as scope_count,
+               (select count(distinct s.dept) from partner_scope s where s.pin=p.pin) as dept_count
         from partner_pins p) t;
   return json_build_object('ok',true,'partners',v);
 end; $$;
@@ -174,13 +187,27 @@ begin
   return json_build_object('blocks',v);
 end; $$;
 
-create or replace function public.admin_set_partner_blocks(p_admin text, p_pin text, p_blocks text[])
+create or replace function public.admin_get_partner_scope(p_admin text, p_pin text)
+returns json language plpgsql security definer set search_path = public as $$
+declare v json;
+begin
+  if not admin_check(p_admin) then return json_build_object('error','invalid_admin'); end if;
+  select coalesce(json_agg(t order by t.dept,t.block),'[]'::json) into v
+  from (select dept,block from partner_scope where pin=p_pin) t;
+  return json_build_object('scope',v);
+end; $$;
+
+create or replace function public.admin_set_partner_scope(p_admin text, p_pin text, p_scope jsonb)
 returns json language plpgsql security definer set search_path = public as $$
 begin
   if not admin_check(p_admin) then return json_build_object('error','invalid_admin'); end if;
-  update partner_pins set allowed_blocks = case
-    when p_blocks is null or array_length(p_blocks,1) is null then null else p_blocks end
-    where pin=p_pin;
+  delete from partner_scope where pin=p_pin;
+  if p_scope is not null then
+    insert into partner_scope(pin,dept,block)
+    select p_pin,(e->>'dept'),(e->>'block') from jsonb_array_elements(p_scope) e
+    where coalesce(e->>'dept','')<>'' and coalesce(e->>'block','')<>''
+    on conflict do nothing;
+  end if;
   return json_build_object('ok',true);
 end; $$;
 
@@ -209,7 +236,8 @@ grant execute on function public.admin_set_partner_active(text,text,boolean) to 
 grant execute on function public.admin_delete_partner(text,text) to anon;
 grant execute on function public.admin_list_all_projects(text) to anon;
 grant execute on function public.admin_list_blocks(text) to anon;
-grant execute on function public.admin_set_partner_blocks(text,text,text[]) to anon;
+grant execute on function public.admin_get_partner_scope(text,text) to anon;
+grant execute on function public.admin_set_partner_scope(text,text,jsonb) to anon;
 grant execute on function public.admin_load_project(text,uuid) to anon;
 
 -- ========== 初始帐号（务必改成你自己的强 PIN）==========

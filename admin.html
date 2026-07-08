@@ -173,7 +173,7 @@
       <div class="card">
         <div class="card-label">合作校帐号</div>
         <div class="table-scroll"><table id="accTable"><thead>
-          <tr><th>学校</th><th>PIN</th><th style="text-align:center">项目</th><th>状态</th><th>开放板块</th><th>操作</th></tr>
+          <tr><th>学校</th><th>PIN</th><th style="text-align:center">项目</th><th>状态</th><th>开放范围</th><th>操作</th></tr>
         </thead><tbody></tbody></table></div>
       </div>
     </div>
@@ -195,7 +195,7 @@
 <div class="modal-bg" id="blockModal">
   <div class="modal">
     <div class="modal-h">开放板块 · <span id="bmSchool"></span></div>
-    <div class="modal-hint">先选专业，再勾选要开放的板块。<b>全不勾 = 开放全部</b>。跨专业勾选会累积。</div>
+    <div class="modal-hint">选专业 → 勾该专业要开放的板块。学校登入后<b>只会出现你勾过的专业与板块</b>。全都不勾 = 开放全部。</div>
     <div class="fld" style="margin-bottom:.8rem;"><label>专业</label><select id="bmDept"></select></div>
     <div class="block-list" id="bmList"></div>
     <div class="modal-actions">
@@ -254,7 +254,7 @@
     rpc('admin_authenticate',{p_admin:adminPin}).then(function(d){renderAccounts((d&&d.partners)||[]);}).catch(function(){});
   }
   var PARTNERS={};
-  function blocksLabel(ab){return (!ab||!ab.length)?'全部':(ab.length+' 个');}
+  function scopeLabel(p){var s=p.scope_count||0;if(!s)return '全部';return (p.dept_count||0)+'专业·'+s+'板块';}
   function renderAccounts(list){
     PARTNERS={};
     $('#sSchools').textContent=list.length;
@@ -269,7 +269,7 @@
         '<td class="mono">'+esc(p.pin)+'</td>'+
         '<td class="num">'+(p.project_count||0)+'</td>'+
         '<td>'+(p.active?'<span class="pill on">启用</span>':'<span class="pill off">停用</span>')+'</td>'+
-        '<td><button class="mini" data-blk="'+esc(p.pin)+'">'+blocksLabel(p.allowed_blocks)+' ▸</button></td>'+
+        '<td><button class="mini" data-blk="'+esc(p.pin)+'">'+scopeLabel(p)+' ▸</button></td>'+
         '<td><button class="mini" data-toggle="'+esc(p.pin)+'" data-act="'+(p.active?'0':'1')+'">'+(p.active?'停用':'启用')+'</button>'+
         '<button class="mini del" data-del="'+esc(p.pin)+'">删除</button></td>';
       tb.appendChild(tr);
@@ -298,15 +298,16 @@
     }).catch(function(e){$('#addBtn').disabled=false;toast('失败：'+e.message);});
   }
 
-  // ---------- 板块白名单（先选专业，再列板块）----------
-  var BLOCKS_BY_DEPT={}, BM_DEPTS=[], bmPending={};
+  // ---------- 开放范围：专业 × 板块 ----------
+  var BLOCKS_BY_DEPT={}, BM_DEPTS=[], bmPending={}, SEP='';
+  function pk(dept,block){return dept+SEP+block;}
   function loadBlocks(){
-    rpc('admin_list_blocks',{p_admin:adminPin}).then(function(d){
+    return rpc('admin_list_blocks',{p_admin:adminPin}).then(function(d){
       var pairs=(d&&d.blocks)||[];
       BLOCKS_BY_DEPT={};BM_DEPTS=[];
       pairs.forEach(function(x){
         var dept,block;
-        if(typeof x==='string'){dept='（全部）';block=x;}       // 兼容旧格式
+        if(typeof x==='string'){dept='（全部）';block=x;}
         else{dept=x.dept||'（未分类）';block=x.block;}
         if(!BLOCKS_BY_DEPT[dept]){BLOCKS_BY_DEPT[dept]=[];BM_DEPTS.push(dept);}
         if(BLOCKS_BY_DEPT[dept].indexOf(block)<0)BLOCKS_BY_DEPT[dept].push(block);
@@ -315,14 +316,17 @@
   }
   function openBlockEditor(pin){
     var p=PARTNERS[pin];if(!p)return;
-    bmPin=pin;
+    bmPin=pin;bmPending={};
     $('#bmSchool').textContent=(p.school_name||'')+'（'+pin+'）';
-    bmPending={};(p.allowed_blocks||[]).forEach(function(b){bmPending[b]=1;});
-    if(!BM_DEPTS.length){$('#bmList').innerHTML='<div class="empty">板块清单载入中…请关掉重开。</div>';loadBlocks();$('#blockModal').classList.add('show');return;}
-    var sel=$('#bmDept');
-    sel.innerHTML=BM_DEPTS.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
-    renderBmBlocks(BM_DEPTS[0]);
-    $('#blockModal').classList.add('show');
+    var ensure=BM_DEPTS.length?Promise.resolve():loadBlocks();
+    ensure.then(function(){
+      return rpc('admin_get_partner_scope',{p_admin:adminPin,p_pin:pin});
+    }).then(function(d){
+      ((d&&d.scope)||[]).forEach(function(s){bmPending[pk(s.dept,s.block)]=1;});
+      $('#bmDept').innerHTML=BM_DEPTS.map(function(dp){return '<option value="'+esc(dp)+'">'+esc(dp)+'</option>';}).join('');
+      renderBmBlocks(BM_DEPTS.length?BM_DEPTS[0]:'');
+      $('#blockModal').classList.add('show');
+    }).catch(function(e){toast('载入范围失败：'+e.message);});
   }
   function renderBmBlocks(dept){
     var box=$('#bmList'),list=BLOCKS_BY_DEPT[dept]||[];
@@ -330,21 +334,21 @@
     if(!list.length){box.innerHTML='<div class="empty">此专业没有板块。</div>';return;}
     list.forEach(function(b){
       var lab=document.createElement('label');lab.className='block-item';
-      lab.innerHTML='<input type="checkbox" '+(bmPending[b]?'checked':'')+' value="'+esc(b)+'" /> <span>'+esc(b)+'</span>';
+      lab.innerHTML='<input type="checkbox" '+(bmPending[pk(dept,b)]?'checked':'')+' /> <span>'+esc(b)+'</span>';
       var cb=lab.querySelector('input');
-      cb.addEventListener('change',function(){if(cb.checked)bmPending[b]=1;else delete bmPending[b];});
+      cb.addEventListener('change',function(){if(cb.checked)bmPending[pk(dept,b)]=1;else delete bmPending[pk(dept,b)];});
       box.appendChild(lab);
     });
   }
   function closeBlockEditor(){$('#blockModal').classList.remove('show');bmPin=null;}
   function saveBlocks(){
     if(!bmPin)return;
-    var arr=Object.keys(bmPending);
+    var arr=Object.keys(bmPending).map(function(k){var i=k.indexOf(SEP);return {dept:k.slice(0,i),block:k.slice(i+1)};});
     $('#bmSave').disabled=true;
-    rpc('admin_set_partner_blocks',{p_admin:adminPin,p_pin:bmPin,p_blocks:arr}).then(function(d){
+    rpc('admin_set_partner_scope',{p_admin:adminPin,p_pin:bmPin,p_scope:arr}).then(function(d){
       $('#bmSave').disabled=false;
       if(d&&d.error){toast('失败：'+d.error);return;}
-      toast(arr.length?('已设定 '+arr.length+' 个板块'):'已开放全部板块');
+      toast(arr.length?('已设定 '+arr.length+' 项（专业×板块）'):'已开放全部');
       closeBlockEditor();refreshAccounts();
     }).catch(function(e){$('#bmSave').disabled=false;toast('失败：'+e.message);});
   }
@@ -445,8 +449,8 @@
   $('#bmSave').addEventListener('click',saveBlocks);
   $('#bmCancel').addEventListener('click',closeBlockEditor);
   $('#bmDept').addEventListener('change',function(){renderBmBlocks(this.value);});
-  $('#bmAll').addEventListener('click',function(){var d=$('#bmDept').value;(BLOCKS_BY_DEPT[d]||[]).forEach(function(b){bmPending[b]=1;});renderBmBlocks(d);});
-  $('#bmNone').addEventListener('click',function(){var d=$('#bmDept').value;(BLOCKS_BY_DEPT[d]||[]).forEach(function(b){delete bmPending[b];});renderBmBlocks(d);});
+  $('#bmAll').addEventListener('click',function(){var d=$('#bmDept').value;(BLOCKS_BY_DEPT[d]||[]).forEach(function(b){bmPending[pk(d,b)]=1;});renderBmBlocks(d);});
+  $('#bmNone').addEventListener('click',function(){var d=$('#bmDept').value;(BLOCKS_BY_DEPT[d]||[]).forEach(function(b){delete bmPending[pk(d,b)];});renderBmBlocks(d);});
   $('#blockModal').addEventListener('click',function(e){if(e.target===$('#blockModal'))closeBlockEditor();});
 })();
 </script>
