@@ -70,6 +70,16 @@
   details.adv summary{font-size:.76rem;color:var(--muted);cursor:pointer;margin-top:.7rem;}
   .toast{position:fixed;left:50%;bottom:2rem;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.85rem;padding:.6rem 1.1rem;border-radius:8px;box-shadow:0 6px 22px rgba(27,36,51,.28);z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;}
   .toast.show{opacity:1;}
+  .modal-bg{position:fixed;inset:0;background:rgba(27,36,51,.5);display:none;align-items:center;justify-content:center;z-index:30;padding:1rem;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--surface);border-radius:12px;padding:1.3rem;max-width:540px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 12px 40px rgba(27,36,51,.3);}
+  .modal-h{font-family:var(--serif);font-size:1.15rem;font-weight:600;margin-bottom:.25rem;}
+  .modal-hint{font-size:.78rem;color:var(--muted);margin-bottom:1rem;}
+  .block-list{display:flex;flex-direction:column;gap:.1rem;margin-bottom:1rem;}
+  .block-item{display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;border-radius:6px;cursor:pointer;font-size:.86rem;}
+  .block-item:hover{background:var(--paper);}
+  .block-item input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0;}
+  .modal-actions{display:flex;gap:.5rem;align-items:center;}
   @media (max-width:560px){.stats{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -129,7 +139,7 @@
       <div class="card">
         <div class="card-label">合作校帐号</div>
         <div class="table-scroll"><table id="accTable"><thead>
-          <tr><th>学校</th><th>PIN</th><th style="text-align:center">项目</th><th>状态</th><th>操作</th></tr>
+          <tr><th>学校</th><th>PIN</th><th style="text-align:center">项目</th><th>状态</th><th>开放板块</th><th>操作</th></tr>
         </thead><tbody></tbody></table></div>
       </div>
     </div>
@@ -147,6 +157,22 @@
 
 </div>
 </div>
+
+<div class="modal-bg" id="blockModal">
+  <div class="modal">
+    <div class="modal-h">开放板块 · <span id="bmSchool"></span></div>
+    <div class="modal-hint">勾选允许这所学校勾选的板块。<b>全不勾 = 开放全部板块</b>。</div>
+    <div class="block-list" id="bmList"></div>
+    <div class="modal-actions">
+      <button class="mini" id="bmAll">全选</button>
+      <button class="mini" id="bmNone">全不选</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="bmSave">保存</button>
+      <button class="mini" id="bmCancel">取消</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -155,6 +181,7 @@
   var $=function(s){return document.querySelector(s);};
   var esc=function(s){return String(s==null?'':s).replace(/[&<>]/g,function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]);});};
   var adminPin=null, toastTimer=null;
+  var ALL_BLOCKS=[], bmPin=null;
 
   function toast(m){var e=$('#toast');e.textContent=m;e.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){e.classList.remove('show');},2200);}
   function setLoginStatus(k,m){var e=$('#loginStatus');e.className='status show '+k;e.innerHTML=m;}
@@ -181,6 +208,7 @@
       adminPin=pin;
       $('#loginCard').style.display='none';
       $('#admin').style.display='';
+      loadBlocks();
       renderAccounts(d.partners||[]);
       loadProjects();
     }).catch(function(err){setLoginStatus('err','登入失败：'+esc(err.message));$('#loginBtn').disabled=false;});
@@ -189,22 +217,28 @@
   function refreshAccounts(){
     rpc('admin_authenticate',{p_admin:adminPin}).then(function(d){renderAccounts((d&&d.partners)||[]);}).catch(function(){});
   }
+  var PARTNERS={};
+  function blocksLabel(ab){return (!ab||!ab.length)?'全部':(ab.length+' 个');}
   function renderAccounts(list){
+    PARTNERS={};
     $('#sSchools').textContent=list.length;
     $('#sActive').textContent=list.filter(function(p){return p.active;}).length;
     var tb=$('#accTable').querySelector('tbody');
-    if(!list.length){tb.innerHTML='<tr><td colspan="5" class="empty">还没有合作校帐号。用上方「新增」。</td></tr>';return;}
+    if(!list.length){tb.innerHTML='<tr><td colspan="6" class="empty">还没有合作校帐号。用上方「新增」。</td></tr>';return;}
     tb.innerHTML='';
     list.forEach(function(p){
+      PARTNERS[p.pin]=p;
       var tr=document.createElement('tr');
       tr.innerHTML='<td>'+esc(p.school_name||'（未命名）')+'</td>'+
         '<td class="mono">'+esc(p.pin)+'</td>'+
         '<td class="num">'+(p.project_count||0)+'</td>'+
         '<td>'+(p.active?'<span class="pill on">启用</span>':'<span class="pill off">停用</span>')+'</td>'+
+        '<td><button class="mini" data-blk="'+esc(p.pin)+'">'+blocksLabel(p.allowed_blocks)+' ▸</button></td>'+
         '<td><button class="mini" data-toggle="'+esc(p.pin)+'" data-act="'+(p.active?'0':'1')+'">'+(p.active?'停用':'启用')+'</button>'+
         '<button class="mini del" data-del="'+esc(p.pin)+'">删除</button></td>';
       tb.appendChild(tr);
     });
+    tb.querySelectorAll('[data-blk]').forEach(function(b){b.addEventListener('click',function(){openBlockEditor(b.getAttribute('data-blk'));});});
     tb.querySelectorAll('[data-toggle]').forEach(function(b){b.addEventListener('click',function(){
       rpc('admin_set_partner_active',{p_admin:adminPin,p_pin:b.getAttribute('data-toggle'),p_active:b.getAttribute('data-act')==='1'})
         .then(function(){toast('已更新');refreshAccounts();}).catch(function(e){toast('失败：'+e.message);});
@@ -226,6 +260,43 @@
       if(d&&d.error){toast('失败：'+d.error);return;}
       $('#newSchool').value='';$('#newPin').value='';toast('已新增');refreshAccounts();
     }).catch(function(e){$('#addBtn').disabled=false;toast('失败：'+e.message);});
+  }
+
+  // ---------- 板块白名单 ----------
+  function loadBlocks(){
+    rpc('admin_list_blocks',{p_admin:adminPin}).then(function(d){
+      ALL_BLOCKS=(d&&d.blocks)||[];
+    }).catch(function(){});
+  }
+  function openBlockEditor(pin){
+    var p=PARTNERS[pin];if(!p)return;
+    bmPin=pin;
+    $('#bmSchool').textContent=(p.school_name||'')+'（'+pin+'）';
+    var cur={};(p.allowed_blocks||[]).forEach(function(b){cur[b]=1;});
+    var box=$('#bmList');
+    if(!ALL_BLOCKS.length){box.innerHTML='<div class="empty">板块清单载入中…请稍后重开。</div>';loadBlocks();}
+    else{
+      box.innerHTML='';
+      ALL_BLOCKS.forEach(function(b){
+        var lab=document.createElement('label');lab.className='block-item';
+        lab.innerHTML='<input type="checkbox" '+(cur[b]?'checked':'')+' value="'+esc(b)+'" /> <span>'+esc(b)+'</span>';
+        box.appendChild(lab);
+      });
+    }
+    $('#blockModal').classList.add('show');
+  }
+  function closeBlockEditor(){$('#blockModal').classList.remove('show');bmPin=null;}
+  function saveBlocks(){
+    if(!bmPin)return;
+    var arr=[];
+    $('#bmList').querySelectorAll('input:checked').forEach(function(cb){arr.push(cb.value);});
+    $('#bmSave').disabled=true;
+    rpc('admin_set_partner_blocks',{p_admin:adminPin,p_pin:bmPin,p_blocks:arr}).then(function(d){
+      $('#bmSave').disabled=false;
+      if(d&&d.error){toast('失败：'+d.error);return;}
+      toast(arr.length?('已设定 '+arr.length+' 个板块'):'已开放全部板块');
+      closeBlockEditor();refreshAccounts();
+    }).catch(function(e){$('#bmSave').disabled=false;toast('失败：'+e.message);});
   }
 
   function loadProjects(){
@@ -261,6 +332,11 @@
   $('#loginBtn').addEventListener('click',login);
   $('#apin').addEventListener('keydown',function(e){if(e.key==='Enter')login();});
   $('#addBtn').addEventListener('click',addPartner);
+  $('#bmSave').addEventListener('click',saveBlocks);
+  $('#bmCancel').addEventListener('click',closeBlockEditor);
+  $('#bmAll').addEventListener('click',function(){$('#bmList').querySelectorAll('input').forEach(function(cb){cb.checked=true;});});
+  $('#bmNone').addEventListener('click',function(){$('#bmList').querySelectorAll('input').forEach(function(cb){cb.checked=false;});});
+  $('#blockModal').addEventListener('click',function(e){if(e.target===$('#blockModal'))closeBlockEditor();});
 })();
 </script>
 </body>
