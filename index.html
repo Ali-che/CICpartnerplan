@@ -37,6 +37,11 @@
   .fld label{font-size:.74rem;color:var(--ink-soft);font-weight:600;}
   .fld input,.fld select{font-family:var(--sans);font-size:.88rem;color:var(--ink);background:var(--paper);border:1px solid var(--border-strong);border-radius:6px;padding:.5rem .65rem;min-width:0;}
   .fld input:focus,.fld select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .pw-wrap{position:relative;width:100%;}
+  .pw-wrap input{width:100%;padding-right:2.3rem;}
+  .pw-eye{position:absolute;right:.3rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.05rem;line-height:1;padding:.15rem .3rem;opacity:.55;}
+  .pw-eye:hover{opacity:1;}
+  .pw-eye:focus-visible{outline:2px solid var(--accent);border-radius:4px;}
   .fld .mono{font-family:var(--mono);font-size:.78rem;}
 
   .btn{font-family:var(--sans);font-size:.85rem;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:7px;padding:.55rem 1.05rem;cursor:pointer;white-space:nowrap;}
@@ -144,7 +149,7 @@
   <div class="card">
     <div class="card-label"><span class="step cfg">0</span>学校登入</div>
     <div class="conn-row">
-      <div class="fld"><label for="pin">学校登入 PIN</label><input id="pin" class="mono" type="password" placeholder="输入贵校的登入 PIN" autocomplete="off" /></div>
+      <div class="fld"><label for="pin">学校登入 PIN</label><div class="pw-wrap"><input id="pin" class="mono" type="password" placeholder="输入贵校的登入 PIN" autocomplete="off" /><button type="button" class="pw-eye" id="pinEye" aria-label="显示或隐藏 PIN">👁</button></div></div>
       <button class="btn" id="connectBtn">登入</button>
     </div>
     <label class="cb" style="margin-top:.6rem;"><input type="checkbox" id="rememberPin" /> 在这台电脑记住 PIN</label>
@@ -507,6 +512,10 @@
   // ---------- 事件 ----------
   $('#connectBtn').addEventListener('click',connect);
   $('#pin').addEventListener('keydown',function(e){if(e.key==='Enter')connect();});
+  $('#pinEye').addEventListener('click',function(){
+    var inp=$('#pin');var show=inp.type==='password';
+    inp.type=show?'text':'password';this.textContent=show?'🙈':'👁';inp.focus();
+  });
   deptEl.addEventListener('change',function(){curDept=deptEl.value;selected={};populateVer();$('#output').innerHTML='';});
   verEl.addEventListener('change',function(){curVer=verEl.value;selected={};renderLibrary();$('#output').innerHTML='';});
   $('#genBtn').addEventListener('click',generate);
