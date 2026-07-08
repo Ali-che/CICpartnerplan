@@ -1,347 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Partner Course Planner · 校校合作课程规划系统</title>
 <style>
-  :root {
-    --ink: #1B2433;
-    --ink-soft: #4A5568;
-    --muted: #6B7686;
-    --paper: #F3F4F1;
-    --surface: #FFFFFF;
-    --border: #DCE0D8;
-    --border-strong: #C3C9BD;
-    --accent: #2C6E5B;
-    --accent-deep: #1F4F41;
-    --accent-soft: #E5EEE9;
-    --amber: #A8632A;
-    --amber-soft: #F4E9DD;
-    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", Georgia, serif;
-    --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, "Segoe UI", system-ui, sans-serif;
-    --mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+  :root{
+    --ink:#1B2433; --ink-soft:#4A5568; --muted:#6B7686; --paper:#F3F4F1; --surface:#FFFFFF;
+    --border:#DCE0D8; --border-strong:#C3C9BD; --accent:#2C6E5B; --accent-deep:#1F4F41;
+    --accent-soft:#E5EEE9; --amber:#A8632A; --amber-soft:#F4E9DD; --danger:#9E3B36; --danger-soft:#F3E2E0;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Songti SC",Georgia,serif;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,"Segoe UI",system-ui,sans-serif;
+    --mono:"SF Mono","JetBrains Mono","Roboto Mono",ui-monospace,Menlo,monospace;
   }
-  * { box-sizing: border-box; }
-  .page {
-    background: var(--paper); color: var(--ink); font-family: var(--sans);
-    line-height: 1.6; font-size: 15px; -webkit-font-smoothing: antialiased;
-    padding: clamp(1.2rem, 3vw, 2.5rem) 1rem 6rem;
-  }
-  .wrap { max-width: 860px; margin: 0 auto; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:15px;-webkit-font-smoothing:antialiased;}
+  .page{padding:clamp(1.2rem,3vw,2.5rem) 1rem 6rem;}
+  .wrap{max-width:900px;margin:0 auto;}
+  .top{border-top:3px solid var(--ink);padding-top:1.1rem;margin-bottom:1.4rem;}
+  .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.4rem,4vw,2rem);margin:0 0 .3rem;letter-spacing:-.01em;}
+  .sub{color:var(--muted);font-size:.9rem;margin:0;}
+  .flowline{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:.6rem;}
+  .flowline b{color:var(--accent-deep);}
 
-  .top { border-top: 3px solid var(--ink); padding-top: 1.1rem; margin-bottom: 1.6rem; }
-  .eyebrow { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.7rem; }
-  h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.5rem, 4vw, 2.1rem); margin: 0 0 0.4rem; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); font-size: 0.92rem; margin: 0; }
-  .demo-tag { display: inline-block; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.08em; background: var(--amber-soft); color: var(--amber); padding: 0.2em 0.6em; border-radius: 20px; margin-left: 0.5rem; vertical-align: middle; }
-  .flowline { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-top: 0.7rem; }
-  .flowline b { color: var(--accent-deep); }
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.2rem;margin-bottom:1.1rem;}
+  .card-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem;}
+  .card-label .step{width:1.4rem;height:1.4rem;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;letter-spacing:0;}
+  .card-label .step.cfg{background:var(--ink);}
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.3rem; margin-bottom: 1.2rem; }
-  .card-label { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
-  .card-label .step { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; letter-spacing: 0; }
-  .card-label .db { margin-left: auto; font-size: 0.62rem; letter-spacing: 0.06em; background: var(--accent-soft); color: var(--accent-deep); padding: 0.15em 0.6em; border-radius: 20px; text-transform: none; }
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem 1rem;}
+  .form-grid.three{grid-template-columns:1fr 1fr 1fr;}
+  .fld{display:flex;flex-direction:column;gap:.3rem;min-width:0;}
+  .fld label{font-size:.74rem;color:var(--ink-soft);font-weight:600;}
+  .fld input,.fld select{font-family:var(--sans);font-size:.88rem;color:var(--ink);background:var(--paper);border:1px solid var(--border-strong);border-radius:6px;padding:.5rem .65rem;min-width:0;}
+  .fld input:focus,.fld select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .fld .mono{font-family:var(--mono);font-size:.78rem;}
 
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.9rem 1rem; }
-  .fld { display: flex; flex-direction: column; gap: 0.3rem; }
-  .fld label { font-size: 0.76rem; color: var(--ink-soft); font-weight: 600; }
-  .fld input, .fld select { font-family: var(--sans); font-size: 0.9rem; color: var(--ink); background: var(--paper); border: 1px solid var(--border-strong); border-radius: 6px; padding: 0.5rem 0.7rem; min-width: 0; }
-  .fld input:focus, .fld select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-  .fld.year select { min-width: 130px; }
-  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .btn{font-family:var(--sans);font-size:.85rem;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:7px;padding:.55rem 1.05rem;cursor:pointer;white-space:nowrap;}
+  .btn:hover{background:var(--accent-deep);}
+  .btn:disabled{background:#4A5568;cursor:not-allowed;opacity:.6;}
+  .btn.ghost{background:transparent;border:1px solid var(--border-strong);color:var(--accent-deep);}
+  .btn.ghost:hover{background:var(--accent-soft);}
 
-  /* major selector */
-  .major-select-row { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
-  .major-select-row .fld { flex: 1; min-width: 220px; }
-  .picked { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; }
-  .picked:empty { display: none; }
-  .chip { font-family: var(--mono); font-size: 0.72rem; background: var(--accent-soft); color: var(--accent-deep); border: 1px solid var(--accent); padding: 0.25em 0.7em; border-radius: 20px; cursor: pointer; }
-  .chip:hover { background: var(--accent); color: #fff; }
-  .chip b { font-weight: 700; }
-  .picked-label { font-size: 0.72rem; color: var(--muted); width: 100%; margin-bottom: -0.2rem; }
+  .conn-row{display:flex;gap:.7rem;align-items:flex-end;flex-wrap:wrap;margin-top:.2rem;}
+  .conn-row .fld{flex:1;min-width:150px;}
+  .status{font-family:var(--mono);font-size:.76rem;margin-top:.75rem;padding:.5rem .7rem;border-radius:6px;display:none;line-height:1.5;}
+  .status.show{display:block;}
+  .status.ok{background:var(--accent-soft);color:var(--accent-deep);}
+  .status.err{background:var(--danger-soft);color:var(--danger);}
+  .status.info{background:var(--amber-soft);color:var(--amber);}
+  .advanced{margin-top:.7rem;}
+  .advanced summary{font-size:.76rem;color:var(--muted);cursor:pointer;}
+  .advanced .form-grid{margin-top:.6rem;}
+  .cb{display:flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--ink-soft);}
 
-  /* course library */
-  .lib-major-h { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; background: var(--accent-soft); color: var(--accent-deep); padding: 0.5rem 0.8rem; border-radius: 6px; margin-bottom: 0.6rem; }
-  .lib-major-h .nm { font-weight: 700; font-size: 0.95rem; }
-  .lib-major-h .nm em { font-style: normal; font-weight: 500; color: var(--accent); font-size: 0.82em; margin-left: 0.4rem; }
-  .lib-major-h .yr { font-family: var(--mono); font-size: 0.66rem; background: var(--surface); border: 1px solid var(--border-strong); padding: 0.15em 0.6em; border-radius: 20px; }
-  .cat-h { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; margin: 0.9rem 0 0.4rem; }
+  .lib-major-h{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;background:var(--accent-soft);color:var(--accent-deep);padding:.5rem .8rem;border-radius:6px;margin-bottom:.6rem;}
+  .lib-major-h .nm{font-weight:700;font-size:.95rem;}
+  .lib-major-h .yr{font-family:var(--mono);font-size:.66rem;background:var(--surface);border:1px solid var(--border-strong);padding:.15em .6em;border-radius:20px;}
+  .block-h{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:.9rem 0 .35rem;}
+  .block-h .bc{font-family:var(--mono);color:var(--accent-deep);}
 
-  .course { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.65rem; border-radius: 7px; border: 1px solid transparent; cursor: pointer; transition: background 0.12s, border-color 0.12s; }
-  .course:hover { background: var(--paper); }
-  .course.on { background: var(--accent-soft); border-color: var(--accent); }
-  .course input { width: 17px; height: 17px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
-  .course .info { flex: 1; min-width: 0; }
-  .course .zh { font-weight: 600; font-size: 0.9rem; }
-  .course .en { color: var(--muted); font-size: 0.78rem; font-style: italic; }
-  .course .cr { font-family: var(--mono); font-size: 0.8rem; color: var(--accent-deep); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .course .cr b { font-size: 0.95rem; }
+  .course{display:flex;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:7px;border:1px solid transparent;cursor:pointer;}
+  .course:hover{background:var(--paper);}
+  .course.on{background:var(--accent-soft);border-color:var(--accent);}
+  .course input{width:17px;height:17px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+  .course .info{flex:1;min-width:0;}
+  .course .code{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-right:.4rem;}
+  .course .zh{font-weight:600;font-size:.88rem;}
+  .course .en{color:var(--muted);font-size:.76rem;font-style:italic;}
+  .course .map{font-family:var(--mono);font-size:.68rem;color:var(--amber);background:var(--amber-soft);padding:.1em .45em;border-radius:4px;margin-left:.35rem;}
+  .course .cr{font-family:var(--mono);font-size:.8rem;color:var(--accent-deep);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .course .cr b{font-size:.95rem;}
 
-  /* sticky bar */
-  .sticky { position: sticky; bottom: 0; z-index: 5; margin: 0 -0.3rem; background: var(--ink); color: #fff; border-radius: 10px; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; box-shadow: 0 6px 24px rgba(27,36,51,0.22); }
-  .sticky .tally { font-family: var(--mono); font-size: 0.85rem; display: flex; gap: 1.3rem; flex-wrap: wrap; }
-  .sticky .tally b { color: #8FD3BE; font-size: 1.05rem; }
-  .btn { font-family: var(--sans); font-size: 0.86rem; font-weight: 700; color: #fff; background: var(--accent); border: none; border-radius: 7px; padding: 0.55rem 1.1rem; cursor: pointer; white-space: nowrap; }
-  .btn:hover { background: var(--accent-deep); }
-  .btn:disabled { background: #4A5568; cursor: not-allowed; opacity: 0.6; }
-  .btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .btn.ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--accent-deep); }
-  .btn.ghost:hover { background: var(--accent-soft); }
+  .sticky{position:sticky;bottom:0;z-index:5;margin:0 -.3rem;background:var(--ink);color:#fff;border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;box-shadow:0 6px 24px rgba(27,36,51,.22);}
+  .sticky .tally{font-family:var(--mono);font-size:.84rem;display:flex;gap:1.2rem;flex-wrap:wrap;}
+  .sticky .tally b{color:#8FD3BE;font-size:1.05rem;}
+  .btn.sticky-ghost{background:transparent;border:1px solid #3E4C5E;color:#B7C4D0;}
+  .btn.sticky-ghost:hover:not(:disabled){background:#2A3646;color:#fff;}
 
-  /* output */
-  #output { margin-top: 1.6rem; scroll-margin-top: 1rem; }
-  .out-card { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 1.5rem 1.4rem; box-shadow: 0 4px 18px rgba(27,36,51,0.07); }
-  .out-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; padding-bottom: 1rem; border-bottom: 2px solid var(--ink); margin-bottom: 1.2rem; }
-  .out-head .t { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
-  .out-head .m { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); text-align: right; }
-  .out-head .m span { display: block; }
-  .o-major { margin-bottom: 1.5rem; }
-  .o-major-h { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; background: var(--accent-soft); color: var(--accent-deep); font-weight: 700; padding: 0.45rem 0.75rem; border-radius: 5px; margin-bottom: 0.5rem; }
-  .o-major-h em { font-style: normal; font-weight: 500; color: var(--accent); font-size: 0.85em; margin-left: 0.35rem; }
-  .o-major-h .yr { font-family: var(--mono); font-size: 0.66rem; background: var(--surface); border: 1px solid var(--border-strong); padding: 0.15em 0.6em; border-radius: 20px; }
-  .o-cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin: 0.7rem 0 0.3rem; }
-  table.out { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-  table.out th, table.out td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
-  table.out th { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-  table.out td.en { color: var(--muted); font-style: italic; font-size: 0.8rem; }
-  table.out td.num, table.out th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  tr.subtotal td { font-weight: 700; border-top: 1px solid var(--border-strong); border-bottom: none; color: var(--ink-soft); font-size: 0.8rem; }
-  .o-major-total { text-align: right; font-family: var(--mono); font-size: 0.82rem; font-weight: 700; color: var(--accent-deep); margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-strong); }
-  .o-major-total b { color: var(--amber); }
-  .grand { display: flex; justify-content: flex-end; gap: 2rem; margin-top: 1.2rem; padding-top: 1rem; border-top: 2px solid var(--ink); font-family: var(--mono); font-size: 0.92rem; flex-wrap: wrap; }
-  .grand b { color: var(--accent-deep); font-size: 1.15rem; }
-  .out-actions { display: flex; gap: 0.6rem; margin-top: 1.2rem; justify-content: flex-end; flex-wrap: wrap; }
+  .proj-row{display:flex;align-items:center;gap:.7rem;padding:.55rem .65rem;border:1px solid var(--border);border-radius:7px;margin-bottom:.5rem;background:var(--paper);}
+  .proj-row.cur{border-color:var(--amber);background:var(--amber-soft);}
+  .proj-row .pinfo{flex:1;min-width:0;}
+  .proj-row .pname{font-weight:650;font-size:.9rem;}
+  .proj-row .pmeta{font-family:var(--mono);font-size:.72rem;color:var(--muted);}
+  .proj-row .pact{display:flex;gap:.4rem;}
+  .proj-row .mini{font-family:var(--sans);font-size:.74rem;font-weight:600;padding:.3rem .6rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface);color:var(--accent-deep);cursor:pointer;}
+  .proj-row .mini:hover{background:var(--accent-soft);}
+  .proj-row .mini.del{color:var(--danger);}
+  .proj-row .mini.del:hover{background:var(--danger-soft);}
+  .toast{position:fixed;left:50%;bottom:5.5rem;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.85rem;padding:.6rem 1.1rem;border-radius:8px;box-shadow:0 6px 22px rgba(27,36,51,.28);z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .toast.show{opacity:1;}
 
-  .empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 1.5rem; }
-  .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; }
+  #output{margin-top:1.5rem;scroll-margin-top:1rem;}
+  .out-card{background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:1.5rem 1.4rem;box-shadow:0 4px 18px rgba(27,36,51,.07);}
+  .out-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;padding-bottom:1rem;border-bottom:2px solid var(--ink);margin-bottom:1.1rem;}
+  .out-head .t{font-family:var(--serif);font-size:1.2rem;font-weight:600;}
+  .out-head .m{font-family:var(--mono);font-size:.74rem;color:var(--muted);text-align:right;}
+  .out-head .m span{display:block;}
+  .o-major{margin-bottom:1.4rem;}
+  .o-major-h{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;background:var(--accent-soft);color:var(--accent-deep);font-weight:700;padding:.45rem .75rem;border-radius:5px;margin-bottom:.5rem;}
+  .o-major-h .yr{font-family:var(--mono);font-size:.66rem;background:var(--surface);border:1px solid var(--border-strong);padding:.15em .6em;border-radius:20px;}
+  .o-block{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:.7rem 0 .3rem;}
+  table.out{width:100%;border-collapse:collapse;font-size:.85rem;}
+  table.out th,table.out td{padding:.38rem .5rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  table.out th{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+  table.out td.code{font-family:var(--mono);font-size:.76rem;color:var(--muted);white-space:nowrap;}
+  table.out td.en{color:var(--muted);font-style:italic;font-size:.78rem;}
+  table.out td.map{font-family:var(--mono);font-size:.72rem;color:var(--amber);}
+  table.out td.num,table.out th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tr.subtotal td{font-weight:700;border-top:1px solid var(--border-strong);border-bottom:none;color:var(--ink-soft);font-size:.8rem;}
+  .o-major-total{text-align:right;font-family:var(--mono);font-size:.82rem;font-weight:700;color:var(--accent-deep);margin-top:.6rem;padding-top:.5rem;border-top:1px dashed var(--border-strong);}
+  .o-major-total b{color:var(--amber);}
+  .grand{display:flex;justify-content:flex-end;gap:2rem;margin-top:1.1rem;padding-top:1rem;border-top:2px solid var(--ink);font-family:var(--mono);font-size:.9rem;flex-wrap:wrap;}
+  .grand b{color:var(--accent-deep);font-size:1.15rem;}
+  .out-actions{display:flex;gap:.6rem;margin-top:1.1rem;justify-content:flex-end;flex-wrap:wrap;}
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .empty{color:var(--muted);font-size:.9rem;text-align:center;padding:1.4rem;}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:.55rem;}
+  .hint code{font-family:var(--mono);background:var(--accent-soft);color:var(--accent-deep);padding:.05em .35em;border-radius:3px;}
+  .pill-demo{display:inline-block;font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;background:var(--amber-soft);color:var(--amber);padding:.2em .6em;border-radius:20px;margin-left:.5rem;vertical-align:middle;}
+  @media (max-width:560px){.form-grid,.form-grid.three{grid-template-columns:1fr;}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
-
+</head>
+<body>
 <div class="page">
 <div class="wrap">
 
   <div class="top">
     <div class="eyebrow">Partner Course Planner · 校校合作</div>
-    <h1>校校合作课程规划系统<span class="demo-tag">DEMO · 假数据</span></h1>
-    <p class="sub">学校端老师的操作流程。学年与专业清单都从数据库读出——数据库有什么，下拉就出现什么。</p>
-    <div class="flowline">流程 · 填资料 → <b>选学年</b> → <b>选专业</b> → 勾课 → 生成架构表</div>
+    <h1>校校合作课程规划系统<span class="pill-demo" id="modeTag">示范数据</span></h1>
+    <p class="sub">合作校老师从课程库（catalog）勾选课程，生成分专业、分模块的课程架构表。</p>
+    <div class="flowline">流程 · <b>连接</b> → 填资料 → <b>选专业</b> → <b>选版本</b> → 勾课 → 生成结构表</div>
   </div>
 
-  <!-- Step 1: form -->
+  <!-- Step 0: connect -->
   <div class="card">
-    <div class="card-label"><span class="step">1</span>填写项目资料<span class="db">学年 ← 数据库</span></div>
+    <div class="card-label"><span class="step cfg">0</span>连接数据库 · 载入 catalog</div>
+    <div class="conn-row">
+      <div class="fld"><label for="pin">存取 PIN</label><input id="pin" class="mono" type="password" placeholder="输入 PIN" autocomplete="off" /></div>
+      <button class="btn" id="connectBtn">连接并载入</button>
+    </div>
+    <label class="cb" style="margin-top:.6rem;"><input type="checkbox" id="rememberPin" /> 在这台电脑记住 PIN</label>
+    <details class="advanced">
+      <summary>高级：Supabase 连接设置（一般不用改）</summary>
+      <div class="form-grid">
+        <div class="fld"><label for="supaUrl">Supabase URL</label><input id="supaUrl" class="mono" type="text" value="https://ahygebtmavcmzqdwwhbs.supabase.co" /></div>
+        <div class="fld"><label for="supaKey">Publishable Key</label><input id="supaKey" class="mono" type="text" value="sb_publishable_hWK78P_LTzHgKcuFMI2FVg_44Yw_tsZ" /></div>
+      </div>
+    </details>
+    <div class="status" id="connStatus"></div>
+    <p class="hint">用合作校<b>专属 PIN</b>，经 <code>partner_authenticate</code> 只读取 catalog（与排课系统的 PIN 完全分开）。未连接时下方用少量示范数据。</p>
+  </div>
+
+  <!-- 我的项目（已保存）-->
+  <div class="card" id="myProjectsCard" style="display:none;">
+    <div class="card-label"><span class="step" style="background:var(--amber);">★</span>我的项目 · 已保存<span id="curProjTag" class="pill-demo" style="display:none;"></span></div>
+    <div id="myProjects"></div>
+    <p class="hint">载入可继续编辑；再次「保存」会更新同一笔。「另存为新项目」则新建一笔。</p>
+  </div>
+
+  <!-- Step 1: project -->
+  <div class="card">
+    <div class="card-label"><span class="step">1</span>填写项目资料</div>
     <div class="form-grid">
-      <div class="fld"><label for="school">合作项目学校名称</label><input id="school" type="text" value="示例大学" /></div>
-      <div class="fld"><label for="project">合作项目名称</label><input id="project" type="text" value="中外合作办学项目" /></div>
-      <div class="fld year"><label for="year">适用学年课纲</label><select id="year"></select></div>
+      <div class="fld"><label for="school">合作项目学校名称</label><input id="school" type="text" value="" placeholder="例：示例大学" /></div>
+      <div class="fld"><label for="project">合作项目名称</label><input id="project" type="text" value="" placeholder="例：中外合作办学项目" /></div>
     </div>
-    <p class="hint">下拉只会出现数据库里真实存在的学年（select distinct academic_year）。切换学年会重设专业与勾选。</p>
   </div>
 
-  <!-- Step 2: major -->
+  <!-- Step 2: dept + version -->
   <div class="card">
-    <div class="card-label"><span class="step">2</span>选择专业<span class="db">专业 ← 数据库（按学年）</span></div>
-    <div class="major-select-row">
-      <div class="fld"><label for="major">专业</label><select id="major"></select></div>
+    <div class="card-label"><span class="step">2</span>选择专业 · 版本</div>
+    <div class="form-grid">
+      <div class="fld"><label for="dept">专业（dept）</label><select id="dept"></select></div>
+      <div class="fld"><label for="ver">版本 / 学年课纲（cohort）</label><select id="ver"></select></div>
     </div>
-    <div class="picked" id="picked"></div>
-    <p class="hint">专业清单按所选学年查出。可切换不同专业分别勾课，已勾的会累积到同一份架构表。</p>
+    <p class="hint">专业与版本都从 catalog 里读出。切换会重设勾选（一份项目对应一个专业-版本组合）。</p>
   </div>
 
-  <!-- Step 3: library -->
+  <!-- Step 3: courses -->
   <div class="card">
     <div class="card-label"><span class="step">3</span>勾选课程</div>
-    <div id="library"></div>
+    <div id="library"><div class="empty">请先在上方连接并载入 catalog。</div></div>
   </div>
 
-  <!-- sticky tally + generate -->
   <div class="sticky">
     <div class="tally">
-      <span>已选 <b id="tCount">0</b> 门课</span>
+      <span>已选 <b id="tCount">0</b> 门</span>
       <span>共 <b id="tCredit">0</b> 学分</span>
-      <span><b id="tMajor">0</b> 个专业</span>
     </div>
-    <button class="btn" id="genBtn" disabled>生成课程架构表 →</button>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <button class="btn sticky-ghost" id="saveBtn" disabled title="需先连接">保存</button>
+      <button class="btn sticky-ghost" id="saveAsBtn" disabled title="需先连接">另存为新</button>
+      <button class="btn" id="genBtn" disabled>生成课程架构表 →</button>
+    </div>
   </div>
 
   <div id="output"></div>
 
 </div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
-(function () {
-  // ---- mock 课程库（模拟 Supabase courses 表）----
-  const COURSES = [
-    // 数字媒体设计 · 114
-    { id:'dm114-1', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'设计基础', zh:'设计概论', en:'Introduction to Design', cr:3 },
-    { id:'dm114-2', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'设计基础', zh:'色彩构成', en:'Color Composition', cr:2 },
-    { id:'dm114-3', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'设计基础', zh:'素描', en:'Drawing', cr:2 },
-    { id:'dm114-4', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'数字技术', zh:'交互设计', en:'Interaction Design', cr:3 },
-    { id:'dm114-5', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'数字技术', zh:'三维建模', en:'3D Modeling', cr:3 },
-    { id:'dm114-6', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'数字技术', zh:'动态图形', en:'Motion Graphics', cr:3 },
-    { id:'dm114-7', year:'114', mzh:'数字媒体设计', men:'Digital Media Design', cat:'毕业专题', zh:'毕业制作', en:'Graduation Project', cr:4 },
-    // 商务英语 · 114
-    { id:'be114-1', year:'114', mzh:'商务英语', men:'Business English', cat:'语言核心', zh:'综合英语', en:'Integrated English', cr:4 },
-    { id:'be114-2', year:'114', mzh:'商务英语', men:'Business English', cat:'语言核心', zh:'英语听说', en:'English Listening & Speaking', cr:3 },
-    { id:'be114-3', year:'114', mzh:'商务英语', men:'Business English', cat:'商务应用', zh:'商务写作', en:'Business Writing', cr:3 },
-    { id:'be114-4', year:'114', mzh:'商务英语', men:'Business English', cat:'商务应用', zh:'国际贸易实务', en:'International Trade Practice', cr:3 },
-    // 数字媒体设计 · 113（旧课纲）
-    { id:'dm113-1', year:'113', mzh:'数字媒体设计', men:'Digital Media Design', cat:'设计基础', zh:'设计概论', en:'Introduction to Design', cr:3 },
-    { id:'dm113-2', year:'113', mzh:'数字媒体设计', men:'Digital Media Design', cat:'设计基础', zh:'平面构成', en:'Plane Composition', cr:2 },
-    { id:'dm113-3', year:'113', mzh:'数字媒体设计', men:'Digital Media Design', cat:'数字技术', zh:'网页设计', en:'Web Design', cr:3 },
-    { id:'dm113-4', year:'113', mzh:'数字媒体设计', men:'Digital Media Design', cat:'数字技术', zh:'影像处理', en:'Image Editing', cr:3 },
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s);};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>]/g,function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]);});};
+  var num=function(v){var n=parseFloat(v);return isNaN(n)?0:n;};
+
+  // ---- 防御式字段读取（catalog 字段名可能有别名）----
+  var F={
+    dept:function(c){return c.dept!=null?c.dept:(c.department!=null?c.department:(c.major!=null?c.major:''));},
+    ver:function(c){return c.cohort!=null?c.cohort:(c.version!=null?c.version:(c.ver!=null?c.ver:''));},
+    block:function(c){return c.block!=null?c.block:(c.category!=null?c.category:(c.block_zh!=null?c.block_zh:'未分类'));},
+    blockCredit:function(c){return c.block_credit!=null?c.block_credit:null;},
+    code:function(c){return c.code!=null?c.code:(c.course_code!=null?c.course_code:(c.cc!=null?c.cc:''));},
+    zh:function(c){return c.zh!=null?c.zh:(c.course_n!=null?c.course_n:(c.name_zh!=null?c.name_zh:(c.name!=null?c.name:'')));},
+    en:function(c){return c.en!=null?c.en:(c.course_en!=null?c.course_en:(c.name_en!=null?c.name_en:''));},
+    credit:function(c){return num(c.credit!=null?c.credit:(c.course_cr!=null?c.course_cr:(c.cr!=null?c.cr:(c.credits!=null?c.credits:0))));},
+    map:function(c){return c.map!=null?c.map:(c.mapping!=null?c.mapping:'');},
+    id:function(c){return c.id!=null?String(c.id):(F.dept(c)+'|'+F.ver(c)+'|'+F.code(c));}
+  };
+  // 稳定业务键：dept|version|code —— 让「实时 catalog 行」与「保存的快照行」能对上
+  var keyOf=function(c){return F.dept(c)+'|'+F.ver(c)+'|'+F.code(c);};
+
+  // ---- 示范数据（未连接时）----
+  var DEMO=[
+    {id:'d1',dept:'IB',cohort:'114',block:'专业核心课 Core Courses',block_credit:6,code:'KB216',zh:'组织与策略管理',en:'Organization and Strategic Management',credit:3,map:'←KB207'},
+    {id:'d2',dept:'IB',cohort:'114',block:'专业核心课 Core Courses',block_credit:6,code:'KB218',zh:'营销与营销创新原理',en:'Principles of Marketing and Marketing Innovation',credit:3,map:'←KB204'},
+    {id:'d3',dept:'IB',cohort:'114',block:'终身学习课程-必修 Lifelong Learning',block_credit:3,code:'KG131',zh:'批判与创新思维',en:'Critical and Innovative Mindset',credit:3,map:'GE-M1'},
+    {id:'d4',dept:'FA',cohort:'114',block:'专业必修课 Required Major',block_credit:6,code:'KL301',zh:'区域商业环境分析',en:'Regional Business Environment',credit:3,map:'IB-M1'},
+    {id:'d5',dept:'FA',cohort:'114',block:'专业必修课 Required Major',block_credit:6,code:'KL302',zh:'国际企业管理',en:'International Business Management',credit:3,map:''}
   ];
 
-  const selected = new Set();
-  let curYear = null, curMajor = null;
-  const $ = (s) => document.querySelector(s);
-  const yearEl = $('#year'), majorEl = $('#major'), libEl = $('#library');
+  var CATALOG=DEMO.slice();
+  var connected=false;
+  var selected={};        // keyOf -> catalog row
+  var curDept=null, curVer=null;
+  var curPin=null;        // 连接成功后记住，供保存/载入复用
+  var curProjectId=null;  // 当前编辑的已保存项目 id（null=新项目）
 
-  const esc = (s) => String(s).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  var deptEl=$('#dept'), verEl=$('#ver'), libEl=$('#library');
 
-  // 模拟：select distinct academic_year from courses order by academic_year desc
-  function distinctYears() { return [...new Set(COURSES.map(c => c.year))].sort().reverse(); }
-  // 模拟：select distinct major from courses where academic_year = :year
-  function majorsForYear(y) {
-    const seen = new Map();
-    COURSES.filter(c => c.year === y).forEach(c => { if (!seen.has(c.mzh)) seen.set(c.mzh, c.men); });
-    return [...seen.entries()].map(([mzh, men]) => ({ mzh, men }));
-  }
-  function coursesFor(y, m) { return COURSES.filter(c => c.year === y && c.mzh === m); }
-  function menOf(mzh) { const c = COURSES.find(x => x.mzh === mzh); return c ? c.men : ''; }
-
-  function populateYears() {
-    const years = distinctYears();
-    yearEl.innerHTML = years.map(y => '<option value="' + y + '">' + y + ' 学年度</option>').join('');
-    curYear = years[0];
+  // ---------- 连接 / 载入 ----------
+  function setStatus(kind,msg){var el=$('#connStatus');el.className='status show '+kind;el.innerHTML=msg;}
+  function setMode(){
+    var t=$('#modeTag');
+    t.textContent=connected?('已载入 '+CATALOG.length+' 门课'):'示范数据';
+    t.style.background=connected?'var(--accent-soft)':'var(--amber-soft)';
+    t.style.color=connected?'var(--accent-deep)':'var(--amber)';
   }
 
-  function populateMajors() {
-    const majors = majorsForYear(curYear);
-    if (!majors.length) {
-      majorEl.innerHTML = '<option value="">（此学年度无专业）</option>';
-      curMajor = null;
-    } else {
-      majorEl.innerHTML = majors.map(m => '<option value="' + esc(m.mzh) + '">' + esc(m.mzh) + '（' + esc(m.men) + '）</option>').join('');
-      curMajor = majors[0].mzh;
+  function extractCatalog(data){
+    if(Array.isArray(data)) return {rows:data,keys:['(array)']};
+    if(data&&typeof data==='object'){
+      if(Array.isArray(data.catalog)) return {rows:data.catalog,keys:Object.keys(data)};
+      if(data.data&&Array.isArray(data.data.catalog)) return {rows:data.data.catalog,keys:Object.keys(data.data)};
+      for(var k in data){ if(Array.isArray(data[k])&&data[k].length&&(data[k][0].code||data[k][0].course_code||data[k][0].zh)) return {rows:data[k],keys:Object.keys(data)}; }
+      return {rows:[],keys:Object.keys(data)};
     }
+    return {rows:[],keys:[]};
   }
 
-  function renderLibrary() {
-    libEl.innerHTML = '';
-    if (!curMajor) { libEl.innerHTML = '<div class="empty">请先选择专业。</div>'; return; }
-    const list = coursesFor(curYear, curMajor);
-    if (!list.length) { libEl.innerHTML = '<div class="empty">此专业在该学年度尚无课程。</div>'; return; }
+  function connect(){
+    var url=$('#supaUrl').value.trim().replace(/\/+$/,'');
+    var key=$('#supaKey').value.trim();
+    var pin=$('#pin').value.trim();
+    if(!url||!key){setStatus('err','请填写 Supabase URL 与 Key。');return;}
+    if(!pin){setStatus('err','请输入存取 PIN。');return;}
+    setStatus('info','连接中…');
+    $('#connectBtn').disabled=true;
+    fetch(url+'/rest/v1/rpc/partner_authenticate',{
+      method:'POST',
+      headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+      body:JSON.stringify({p_pin:pin})
+    }).then(function(res){
+      if(!res.ok){return res.text().then(function(t){throw new Error('HTTP '+res.status+' '+t.slice(0,120));});}
+      return res.json();
+    }).then(function(data){
+      var out=extractCatalog(data);
+      if(!out.rows.length){
+        setStatus('err','已连接，但没找到 catalog 数据。返回的字段有：<b>'+esc(out.keys.join(', '))+'</b>。请把这行发给我，我调整读取路径。');
+        $('#connectBtn').disabled=false;return;
+      }
+      CATALOG=out.rows;connected=true;selected={};curPin=pin;curProjectId=null;
+      if($('#rememberPin').checked){try{localStorage.setItem('cpp_pin',pin);}catch(e){}}
+      else{try{localStorage.removeItem('cpp_pin');}catch(e){}}
+      setStatus('ok','✓ 已载入 catalog：共 <b>'+CATALOG.length+'</b> 门课。');
+      setMode();populateDept();
+      $('#myProjectsCard').style.display='';
+      loadProjectList();updateTally();
+    }).catch(function(err){
+      setStatus('err','连接失败：'+esc(err.message)+'<br>可能是 PIN 错误、网络问题，或 partner_authenticate 尚未在 Supabase 建好。');
+      $('#connectBtn').disabled=false;
+    });
+  }
 
-    const head = document.createElement('div');
-    head.className = 'lib-major-h';
-    head.innerHTML = '<span class="nm">' + esc(curMajor) + '<em>' + esc(menOf(curMajor)) + '</em></span><span class="yr">' + curYear + ' 学年度课纲</span>';
+  // ---------- 下拉 ----------
+  function distinct(arr){var s=[],seen={};arr.forEach(function(v){var k=String(v);if(!seen[k]&&k!==''){seen[k]=1;s.push(v);}});return s;}
+  function populateDept(){
+    var depts=distinct(CATALOG.map(F.dept));depts.sort();
+    deptEl.innerHTML=depts.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
+    curDept=depts.length?depts[0]:null;populateVer();
+  }
+  function populateVer(){
+    var vers=distinct(CATALOG.filter(function(c){return F.dept(c)===curDept;}).map(F.ver));
+    vers.sort(function(a,b){return String(b).localeCompare(String(a));});
+    verEl.innerHTML=vers.length?vers.map(function(v){return '<option value="'+esc(v)+'">'+esc(v)+'</option>';}).join(''):'<option value="">（无版本）</option>';
+    curVer=vers.length?vers[0]:null;renderLibrary();
+  }
+
+  // ---------- 课程列表 ----------
+  function currentCourses(){return CATALOG.filter(function(c){return F.dept(c)===curDept&&String(F.ver(c))===String(curVer);});}
+  function renderLibrary(){
+    libEl.innerHTML='';
+    if(!curDept){libEl.innerHTML='<div class="empty">没有专业数据。</div>';return;}
+    var list=currentCourses();
+    if(!list.length){libEl.innerHTML='<div class="empty">此专业-版本下没有课程。</div>';updateTally();return;}
+    var head=document.createElement('div');head.className='lib-major-h';
+    head.innerHTML='<span class="nm">'+esc(curDept)+'</span><span class="yr">'+esc(curVer)+' 版本</span>';
     libEl.appendChild(head);
-
-    const cats = {}; const order = [];
-    for (const c of list) { if (!(c.cat in cats)) { cats[c.cat] = []; order.push(c.cat); } cats[c.cat].push(c); }
-    for (const cat of order) {
-      const ch = document.createElement('div'); ch.className = 'cat-h'; ch.textContent = cat; libEl.appendChild(ch);
-      for (const c of cats[cat]) {
-        const row = document.createElement('label');
-        row.className = 'course' + (selected.has(c.id) ? ' on' : '');
-        row.innerHTML =
-          '<input type="checkbox" ' + (selected.has(c.id) ? 'checked' : '') + ' />' +
-          '<span class="info"><span class="zh">' + esc(c.zh) + '</span> <span class="en">' + esc(c.en) + '</span></span>' +
-          '<span class="cr"><b>' + c.cr + '</b> 学分</span>';
-        const cb = row.querySelector('input');
-        cb.addEventListener('change', () => {
-          if (cb.checked) { selected.add(c.id); row.classList.add('on'); }
-          else { selected.delete(c.id); row.classList.remove('on'); }
-          updateTally(); renderPicked();
+    var blocks={},order=[];
+    list.forEach(function(c){var b=F.block(c);if(!blocks[b]){blocks[b]=[];order.push(b);}blocks[b].push(c);});
+    order.forEach(function(b){
+      var bc=null;blocks[b].forEach(function(c){if(bc==null)bc=F.blockCredit(c);});
+      var bh=document.createElement('div');bh.className='block-h';
+      bh.innerHTML='<span>'+esc(b)+'</span>'+(bc!=null?'<span class="bc">'+esc(bc)+' cr</span>':'');
+      libEl.appendChild(bh);
+      blocks[b].forEach(function(c){
+        var id=keyOf(c),mp=F.map(c);
+        var row=document.createElement('label');row.className='course'+(selected[id]?' on':'');
+        row.innerHTML='<input type="checkbox" '+(selected[id]?'checked':'')+' />'+
+          '<span class="info"><span class="code">'+esc(F.code(c))+'</span><span class="zh">'+esc(F.zh(c))+'</span>'+
+          (mp?'<span class="map">'+esc(mp)+'</span>':'')+'<br><span class="en">'+esc(F.en(c))+'</span></span>'+
+          '<span class="cr"><b>'+F.credit(c)+'</b> 学分</span>';
+        var cb=row.querySelector('input');
+        cb.addEventListener('change',function(){
+          if(cb.checked){selected[id]=c;row.classList.add('on');}else{delete selected[id];row.classList.remove('on');}
+          updateTally();
         });
         libEl.appendChild(row);
-      }
-    }
+      });
+    });
+    updateTally();
   }
 
-  function selectedList() { return COURSES.filter(c => selected.has(c.id)); }
-
-  // 已勾选的专业（本学年）以 chip 呈现，点击可跳回该专业
-  function renderPicked() {
-    const box = $('#picked');
-    const sel = selectedList().filter(c => c.year === curYear);
-    const byMajor = {};
-    for (const c of sel) { (byMajor[c.mzh] = byMajor[c.mzh] || []).push(c); }
-    const keys = Object.keys(byMajor);
-    if (!keys.length) { box.innerHTML = ''; return; }
-    let html = '<span class="picked-label">已勾选专业（点击可切回）</span>';
-    for (const mzh of keys) {
-      const arr = byMajor[mzh];
-      const cr = arr.reduce((s, c) => s + c.cr, 0);
-      html += '<span class="chip" data-m="' + esc(mzh) + '">' + esc(mzh) + ' · <b>' + arr.length + '</b>门 ' + cr + '学分</span>';
-    }
-    box.innerHTML = html;
-    box.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
-      curMajor = ch.getAttribute('data-m');
-      majorEl.value = curMajor; renderLibrary();
-    }));
+  function selectedRows(){var a=[];for(var k in selected)a.push(selected[k]);return a;}
+  function updateTally(){
+    var sel=selectedRows();
+    $('#tCount').textContent=sel.length;
+    $('#tCredit').textContent=sel.reduce(function(s,c){return s+F.credit(c);},0);
+    $('#genBtn').disabled=sel.length===0;
+    var canSave=connected&&sel.length>0;
+    $('#saveBtn').disabled=!canSave;
+    $('#saveAsBtn').disabled=!canSave;
   }
 
-  function updateTally() {
-    const sel = selectedList();
-    const majors = new Set(sel.map(c => c.mzh));
-    $('#tCount').textContent = sel.length;
-    $('#tCredit').textContent = sel.reduce((s, c) => s + c.cr, 0);
-    $('#tMajor').textContent = majors.size;
-    $('#genBtn').disabled = sel.length === 0;
+  // ---------- Supabase RPC 小工具 ----------
+  function rpc(fn,body){
+    var url=$('#supaUrl').value.trim().replace(/\/+$/,'');
+    var key=$('#supaKey').value.trim();
+    return fetch(url+'/rest/v1/rpc/'+fn,{
+      method:'POST',
+      headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).then(function(res){
+      if(!res.ok){return res.text().then(function(t){throw new Error('HTTP '+res.status+' '+t.slice(0,140));});}
+      return res.json();
+    });
+  }
+  var toastTimer=null;
+  function toast(msg){
+    var el=$('#toast');el.textContent=msg;el.classList.add('show');
+    if(toastTimer)clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){el.classList.remove('show');},2200);
   }
 
-  function generate() {
-    const sel = selectedList();
-    if (!sel.length) return;
-    const school = esc($('#school').value || '（未填学校）');
-    const project = esc($('#project').value || '（未填项目）');
-    const year = curYear;
-
-    const majors = []; const mIndex = {};
-    for (const c of sel) {
-      if (!(c.mzh in mIndex)) { mIndex[c.mzh] = { mzh:c.mzh, men:c.men, cats:{}, order:[] }; majors.push(mIndex[c.mzh]); }
-      const m = mIndex[c.mzh];
-      if (!(c.cat in m.cats)) { m.cats[c.cat] = []; m.order.push(c.cat); }
-      m.cats[c.cat].push(c);
-    }
-
-    let grandCount = 0, grandCredit = 0;
-    let html = '<div class="out-card"><div class="out-head"><div class="t">课程架构表</div><div class="m">' +
-      '<span>合作学校 · ' + school + '</span><span>合作项目 · ' + project + '</span><span>适用课纲 · ' + year + ' 学年度</span></div></div>';
-
-    for (const m of majors) {
-      let mCount = 0, mCredit = 0;
-      html += '<div class="o-major"><div class="o-major-h"><span>' + esc(m.mzh) + '<em>' + esc(m.men) + '</em></span><span class="yr">' + year + ' 学年度课纲</span></div>';
-      for (const cat of m.order) {
-        const rows = m.cats[cat]; let cCredit = 0;
-        html += '<div class="o-cat">' + esc(cat) + '</div><table class="out"><thead><tr><th>课程名称（中）</th><th>课程名称（英）</th><th class="num">学分</th></tr></thead><tbody>';
-        for (const c of rows) { html += '<tr><td>' + esc(c.zh) + '</td><td class="en">' + esc(c.en) + '</td><td class="num">' + c.cr + '</td></tr>'; cCredit += c.cr; }
-        html += '<tr class="subtotal"><td>小计</td><td class="num">' + rows.length + ' 门课</td><td class="num">' + cCredit + '</td></tr></tbody></table>';
-        mCount += rows.length; mCredit += cCredit;
-      }
-      html += '<div class="o-major-total">' + esc(m.mzh) + ' · 专业合计　总课数 <b>' + mCount + '</b> 门　总学分 <b>' + mCredit + '</b></div></div>';
-      grandCount += mCount; grandCredit += mCredit;
-    }
-
-    html += '<div class="grand"><span>全项目合计 &nbsp;<b>' + grandCount + '</b> 门课</span><span>总学分 &nbsp;<b>' + grandCredit + '</b></span></div></div>';
-    html += '<div class="out-actions"><button class="btn ghost" id="printBtn">打印 / 导出 PDF</button></div>';
-
-    const out = $('#output');
-    out.innerHTML = html;
-    const pb = $('#printBtn'); if (pb) pb.addEventListener('click', () => window.print());
-    out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // ---------- 保存 / 载入 ----------
+  function buildPayload(){
+    return selectedRows().map(function(c){return {
+      code:F.code(c),zh:F.zh(c),en:F.en(c),credit:F.credit(c),
+      block:F.block(c),block_credit:F.blockCredit(c),map:F.map(c),
+      dept:F.dept(c),version:F.ver(c)
+    };});
+  }
+  function saveProject(asNew){
+    if(!connected){toast('请先连接');return;}
+    var sel=selectedRows();if(!sel.length){toast('请先勾选课程');return;}
+    var body={
+      p_pin:curPin,p_id:asNew?null:curProjectId,
+      p_school:$('#school').value||'',p_project:$('#project').value||'',
+      p_dept:curDept,p_version:curVer,p_payload:buildPayload()
+    };
+    $('#saveBtn').disabled=true;$('#saveAsBtn').disabled=true;
+    rpc('partner_save_project',body).then(function(id){
+      curProjectId=(typeof id==='string')?id.replace(/"/g,''):id;
+      toast(asNew?'已另存为新项目':'已保存');
+      loadProjectList();updateTally();
+    }).catch(function(err){toast('保存失败：'+err.message);updateTally();});
+  }
+  function loadProjectList(){
+    if(!curPin)return;
+    rpc('partner_list_projects',{p_pin:curPin}).then(function(d){
+      renderProjectList((d&&d.projects)||[]);
+    }).catch(function(){/* 静默 */});
+  }
+  function renderProjectList(list){
+    var box=$('#myProjects');
+    var tag=$('#curProjTag');
+    if(curProjectId){tag.style.display='';tag.textContent='正在编辑';tag.style.background='var(--amber-soft)';tag.style.color='var(--amber)';}
+    else{tag.style.display='none';}
+    if(!list.length){box.innerHTML='<div class="empty" style="padding:.6rem;">还没有保存的项目。勾选后点「保存」。</div>';return;}
+    box.innerHTML='';
+    list.forEach(function(p){
+      var row=document.createElement('div');
+      row.className='proj-row'+(String(p.id)===String(curProjectId)?' cur':'');
+      row.innerHTML='<div class="pinfo"><div class="pname">'+esc(p.project_name||'（未命名）')+
+        ' <span style="color:var(--muted);font-weight:400">· '+esc(p.school_name||'')+'</span></div>'+
+        '<div class="pmeta">'+esc(p.dept||'')+' · '+esc(p.version||'')+' 版本 · '+(p.course_count||0)+' 门</div></div>'+
+        '<div class="pact"><button class="mini" data-load="'+esc(p.id)+'">载入</button>'+
+        '<button class="mini del" data-del="'+esc(p.id)+'">删除</button></div>';
+      box.appendChild(row);
+    });
+    box.querySelectorAll('[data-load]').forEach(function(b){b.addEventListener('click',function(){loadProject(b.getAttribute('data-load'));});});
+    box.querySelectorAll('[data-del]').forEach(function(b){b.addEventListener('click',function(){delProject(b.getAttribute('data-del'));});});
+  }
+  function loadProject(id){
+    rpc('partner_load_project',{p_pin:curPin,p_id:id}).then(function(p){
+      if(!p||p.error){toast('载入失败');return;}
+      curProjectId=String(p.id);
+      $('#school').value=p.school_name||'';
+      $('#project').value=p.project_name||'';
+      // 设专业/版本
+      if(p.dept){curDept=p.dept;deptEl.value=p.dept;}
+      populateVer();
+      if(p.version){curVer=p.version;verEl.value=p.version;}
+      // 从快照恢复勾选（用稳定业务键，实时行也能对上）
+      selected={};
+      (p.payload||[]).forEach(function(r){selected[keyOf(r)]=r;});
+      renderLibrary();updateTally();loadProjectList();
+      $('#output').innerHTML='';
+      toast('已载入：'+(p.project_name||'项目'));
+      $('#myProjectsCard').scrollIntoView({behavior:'smooth',block:'start'});
+    }).catch(function(err){toast('载入失败：'+err.message);});
+  }
+  function delProject(id){
+    if(!confirm('删除这个已保存的项目？此操作无法撤销。'))return;
+    rpc('partner_delete_project',{p_pin:curPin,p_id:id}).then(function(){
+      if(String(id)===String(curProjectId))curProjectId=null;
+      toast('已删除');loadProjectList();updateTally();
+    }).catch(function(err){toast('删除失败：'+err.message);});
   }
 
-  yearEl.addEventListener('change', () => {
-    curYear = yearEl.value;
-    selected.clear();                 // 项目只属于单一学年，切换学年清空勾选
-    populateMajors(); renderLibrary(); renderPicked(); updateTally();
-    $('#output').innerHTML = '';
-  });
-  majorEl.addEventListener('change', () => { curMajor = majorEl.value; renderLibrary(); });
-  $('#genBtn').addEventListener('click', generate);
+  // ---------- 生成结构表 ----------
+  function generate(){
+    var sel=selectedRows();if(!sel.length)return;
+    var school=esc($('#school').value||'（未填学校）');
+    var project=esc($('#project').value||'（未填项目）');
+    var majors=[],mIdx={};
+    sel.forEach(function(c){
+      var mk=F.dept(c)+' · '+F.ver(c);
+      if(!mIdx[mk]){mIdx[mk]={dept:F.dept(c),ver:F.ver(c),blocks:{},order:[]};majors.push(mIdx[mk]);}
+      var m=mIdx[mk],b=F.block(c);
+      if(!m.blocks[b]){m.blocks[b]=[];m.order.push(b);}
+      m.blocks[b].push(c);
+    });
+    var gCount=0,gCredit=0;
+    var html='<div class="out-card"><div class="out-head"><div class="t">课程架构表</div><div class="m">'+
+      '<span>合作学校 · '+school+'</span><span>合作项目 · '+project+'</span></div></div>';
+    majors.forEach(function(m){
+      var mCount=0,mCredit=0;
+      html+='<div class="o-major"><div class="o-major-h"><span>'+esc(m.dept)+'</span><span class="yr">'+esc(m.ver)+' 版本</span></div>';
+      m.order.forEach(function(b){
+        var rows=m.blocks[b],cCredit=0;
+        html+='<div class="o-block">'+esc(b)+'</div><table class="out"><thead><tr><th>代码</th><th>课程名称（中）</th><th>课程名称（英）</th><th>对接</th><th class="num">学分</th></tr></thead><tbody>';
+        rows.forEach(function(c){
+          html+='<tr><td class="code">'+esc(F.code(c))+'</td><td>'+esc(F.zh(c))+'</td><td class="en">'+esc(F.en(c))+'</td><td class="map">'+esc(F.map(c))+'</td><td class="num">'+F.credit(c)+'</td></tr>';
+          cCredit+=F.credit(c);
+        });
+        html+='<tr class="subtotal"><td colspan="2">小计</td><td class="num">'+rows.length+' 门</td><td></td><td class="num">'+cCredit+'</td></tr></tbody></table>';
+        mCount+=rows.length;mCredit+=cCredit;
+      });
+      html+='<div class="o-major-total">'+esc(m.dept)+' · 专业合计　总课数 <b>'+mCount+'</b> 门　总学分 <b>'+mCredit+'</b></div></div>';
+      gCount+=mCount;gCredit+=mCredit;
+    });
+    html+='<div class="grand"><span>全项目合计 &nbsp;<b>'+gCount+'</b> 门课</span><span>总学分 &nbsp;<b>'+gCredit+'</b></span></div></div>';
+    html+='<div class="out-actions"><button class="btn ghost" id="printBtn">打印 / 导出 PDF</button></div>';
+    var out=$('#output');out.innerHTML=html;
+    var pb=$('#printBtn');if(pb)pb.addEventListener('click',function(){window.print();});
+    out.scrollIntoView({behavior:'smooth',block:'start'});
+  }
 
-  // init
-  populateYears(); populateMajors(); renderLibrary(); renderPicked(); updateTally();
+  // ---------- 事件 ----------
+  $('#connectBtn').addEventListener('click',connect);
+  $('#pin').addEventListener('keydown',function(e){if(e.key==='Enter')connect();});
+  deptEl.addEventListener('change',function(){curDept=deptEl.value;selected={};populateVer();$('#output').innerHTML='';});
+  verEl.addEventListener('change',function(){curVer=verEl.value;selected={};renderLibrary();$('#output').innerHTML='';});
+  $('#genBtn').addEventListener('click',generate);
+  $('#saveBtn').addEventListener('click',function(){saveProject(false);});
+  $('#saveAsBtn').addEventListener('click',function(){saveProject(true);});
+
+  try{var saved=localStorage.getItem('cpp_pin');if(saved){$('#pin').value=saved;$('#rememberPin').checked=true;}}catch(e){}
+
+  setMode();populateDept();
 })();
 </script>
+</body>
+</html>
