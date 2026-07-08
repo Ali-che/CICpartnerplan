@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Partner Course Planner · 校校合作课程规划系统</title>
+<title>CIC 校校合作课程规划系统</title>
 <style>
   :root{
     --ink:#1B2433; --ink-soft:#4A5568; --muted:#6B7686; --paper:#F3F4F1; --surface:#FFFFFF;
@@ -146,8 +146,8 @@
 
   <div class="top">
     <div class="top-main">
-      <div class="eyebrow">Partner Course Planner · 校校合作</div>
-      <h1>校校合作课程规划系统<span class="pill-demo" id="modeTag">未登入</span></h1>
+      <div class="eyebrow">CIC · Partner Course Planner</div>
+      <h1>CIC 校校合作课程规划系统<span class="pill-demo" id="modeTag">未登入</span></h1>
       <p class="sub">合作校老师从课程库（catalog）勾选课程，生成分专业、分模块的课程架构表。</p>
       <div class="flowline">流程 · <b>登入</b> → 填资料 → <b>选专业</b> → <b>选版本</b> → 勾课 → 生成结构表</div>
     </div>
@@ -524,7 +524,7 @@
     var gCount=0,gCredit=0;
     var _d=new Date(),_p=function(n){return(n<10?'0':'')+n;};
     var dateStr=_d.getFullYear()+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate());
-    var html='<div class="out-card"><div class="out-head"><div class="t">课程架构表</div><div class="m">'+
+    var html='<div class="out-card"><div class="out-head"><div class="t">CIC 课程架构表</div><div class="m">'+
       '<span>合作学校 · '+school+'</span><span>合作项目 · '+project+'</span><span>制表日期 · '+dateStr+'</span></div></div>';
     majors.forEach(function(m){
       var mCount=0,mCredit=0;
@@ -543,10 +543,46 @@
       gCount+=mCount;gCredit+=mCredit;
     });
     html+='<div class="grand"><span>全项目合计 &nbsp;<b>'+gCount+'</b> 门课</span><span>总学分 &nbsp;<b>'+gCredit+'</b></span></div></div>';
-    html+='<div class="out-actions"><button class="btn ghost" id="printBtn">打印 / 导出 PDF</button></div>';
+    html+='<div class="out-actions"><button class="btn ghost" id="xlsBtn">导出 Excel</button><button class="btn ghost" id="printBtn">打印 / 导出 PDF</button></div>';
     var out=$('#output');out.innerHTML=html;
     var pb=$('#printBtn');if(pb)pb.addEventListener('click',function(){window.print();});
+    var xb=$('#xlsBtn');if(xb)xb.addEventListener('click',exportExcel);
     out.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  // ---------- 导出 Excel（无外部库，.xls）----------
+  function downloadXls(name,tableHtml){
+    var full='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+tableHtml+'</body></html>';
+    var blob=new Blob(['﻿'+full],{type:'application/vnd.ms-excel;charset=utf-8'});
+    var url=URL.createObjectURL(blob);var a=document.createElement('a');
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);
+  }
+  function exportExcel(){
+    var sel=selectedRows();if(!sel.length)return;
+    var school=$('#school').value||'（未填学校）',project=$('#project').value||'（未填项目）';
+    var _d=new Date(),_p=function(n){return(n<10?'0':'')+n;};
+    var dateStr=_d.getFullYear()+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate());
+    var majors=[],mIdx={};
+    sel.forEach(function(c){var mk=F.dept(c)+'|'+F.ver(c);if(!mIdx[mk]){mIdx[mk]={dept:F.dept(c),ver:F.ver(c),blocks:{},order:[]};majors.push(mIdx[mk]);}var m=mIdx[mk],b=F.block(c);if(!m.blocks[b]){m.blocks[b]=[];m.order.push(b);}m.blocks[b].push(c);});
+    var td=function(s){return '<td>'+esc(s)+'</td>';};
+    var rows='<tr><td colspan="8" style="font-weight:bold;font-size:15px">CIC 课程架构表</td></tr>'+
+      '<tr><td colspan="8">合作学校：'+esc(school)+'　合作项目：'+esc(project)+'　制表日期：'+dateStr+'</td></tr><tr></tr>'+
+      '<tr>'+['专业','版本','板块','代码','课程名称(中)','课程名称(英)','对接','学分'].map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr>';
+    var gC=0,gCr=0;
+    majors.forEach(function(m){
+      var mC=0,mCr=0;
+      m.order.forEach(function(b){
+        var rs=m.blocks[b],bCr=0;
+        rs.forEach(function(c){rows+='<tr>'+td(m.dept)+td(m.ver)+td(b)+td(F.code(c))+td(F.zh(c))+td(F.en(c))+td(F.map(c))+'<td>'+F.credit(c)+'</td></tr>';bCr+=F.credit(c);});
+        rows+='<tr><td colspan="6"></td><td>小计 '+rs.length+' 门</td><td>'+bCr+'</td></tr>';
+        mC+=rs.length;mCr+=bCr;
+      });
+      rows+='<tr><td colspan="6"></td><td>'+esc(m.dept)+' 专业合计 '+mC+' 门</td><td>'+mCr+'</td></tr>';
+      gC+=mC;gCr+=mCr;
+    });
+    rows+='<tr><td colspan="6"></td><td>全项目合计 '+gC+' 门</td><td>'+gCr+'</td></tr>';
+    downloadXls('CIC课程架构表_'+dateStr+'.xls','<table border="1">'+rows+'</table>');
   }
 
   // ---------- 事件 ----------

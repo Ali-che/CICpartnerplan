@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>管理后台 · Partner Course Planner</title>
+<title>CIC 管理后台 · Partner Course Planner</title>
 <style>
   :root{
     --ink:#1B2433;--ink-soft:#4A5568;--muted:#6B7686;--paper:#F3F4F1;--surface:#FFFFFF;
@@ -123,8 +123,8 @@
 
   <div class="top">
     <div>
-      <div class="eyebrow">Admin · 管理后台</div>
-      <h1>合作校帐号与项目管理</h1>
+      <div class="eyebrow">CIC · Admin 管理后台</div>
+      <h1>CIC 合作校帐号与项目管理</h1>
     </div>
     <a href="./index.html" id="logoutA">登出</a>
   </div>
@@ -368,10 +368,11 @@
           '<td class="mono">'+esc(p.dept||'')+' · '+esc(p.version||'')+'</td>'+
           '<td class="num">'+(p.course_count||0)+'</td>'+
           '<td class="mono">'+esc(d2)+'</td>'+
-          '<td><button class="mini" data-export="'+esc(p.id)+'">导出 PDF</button></td>';
+          '<td><button class="mini" data-export="'+esc(p.id)+'">PDF</button> <button class="mini" data-xls="'+esc(p.id)+'">Excel</button></td>';
         tb.appendChild(tr);
       });
       tb.querySelectorAll('[data-export]').forEach(function(b){b.addEventListener('click',function(){exportProject(b.getAttribute('data-export'));});});
+      tb.querySelectorAll('[data-xls]').forEach(function(b){b.addEventListener('click',function(){exportProjectXls(b.getAttribute('data-xls'));});});
     }).catch(function(){});
   }
 
@@ -397,7 +398,7 @@
       m.blocks[b].push(c);
     });
     var gCount=0,gCredit=0;
-    var html='<div class="out-card"><div class="out-head"><div class="t">课程架构表</div><div class="m">'+
+    var html='<div class="out-card"><div class="out-head"><div class="t">CIC 课程架构表</div><div class="m">'+
       '<span>合作学校 · '+esc(p.school_name||p.pin||'')+'</span><span>合作项目 · '+esc(p.project_name||'（未命名）')+'</span><span>制表日期 · '+dateStr+'</span></div></div>';
     majors.forEach(function(m){
       var mCount=0,mCredit=0;
@@ -418,6 +419,47 @@
     });
     html+='<div class="grand"><span>全项目合计 &nbsp;<b>'+gCount+'</b> 门课</span><span>总学分 &nbsp;<b>'+gCredit+'</b></span></div></div>';
     return html;
+  }
+
+  // ---------- 导出 Excel（无外部库，.xls）----------
+  function downloadXls(name,tableHtml){
+    var full='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+tableHtml+'</body></html>';
+    var blob=new Blob(['﻿'+full],{type:'application/vnd.ms-excel;charset=utf-8'});
+    var url=URL.createObjectURL(blob);var a=document.createElement('a');
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);
+  }
+  function exportProjectXls(id){
+    toast('准备 Excel…');
+    rpc('admin_load_project',{p_admin:adminPin,p_id:id}).then(function(p){
+      if(!p||p.error){toast('载入失败');return;}
+      downloadXls('CIC课程架构表_'+(p.project_name||'项目')+'.xls', buildXlsTable(p));
+    }).catch(function(e){toast('失败：'+e.message);});
+  }
+  function buildXlsTable(p){
+    var rows=p.payload||[];
+    var _d=new Date(),_p=function(n){return(n<10?'0':'')+n;};
+    var dateStr=_d.getFullYear()+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate());
+    var majors=[],mIdx={};
+    rows.forEach(function(c){var mk=(c.dept||'')+'|'+(c.version||'');if(!mIdx[mk]){mIdx[mk]={dept:c.dept||'',ver:c.version||'',blocks:{},order:[]};majors.push(mIdx[mk]);}var m=mIdx[mk],b=c.block||'未分类';if(!m.blocks[b]){m.blocks[b]=[];m.order.push(b);}m.blocks[b].push(c);});
+    var td=function(s){return '<td>'+esc(s)+'</td>';};
+    var out='<tr><td colspan="8" style="font-weight:bold;font-size:15px">CIC 课程架构表</td></tr>'+
+      '<tr><td colspan="8">合作学校：'+esc(p.school_name||p.pin||'')+'　合作项目：'+esc(p.project_name||'')+'　制表日期：'+dateStr+'</td></tr><tr></tr>'+
+      '<tr>'+['专业','版本','板块','代码','课程名称(中)','课程名称(英)','对接','学分'].map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr>';
+    var gC=0,gCr=0;
+    majors.forEach(function(m){
+      var mC=0,mCr=0;
+      m.order.forEach(function(b){
+        var rs=m.blocks[b],bCr=0;
+        rs.forEach(function(c){var cr=parseFloat(c.credit)||0;out+='<tr>'+td(m.dept)+td(m.ver)+td(b)+td(c.code||'')+td(c.zh||'')+td(c.en||'')+td(c.map||'')+'<td>'+cr+'</td></tr>';bCr+=cr;});
+        out+='<tr><td colspan="6"></td><td>小计 '+rs.length+' 门</td><td>'+bCr+'</td></tr>';
+        mC+=rs.length;mCr+=bCr;
+      });
+      out+='<tr><td colspan="6"></td><td>'+esc(m.dept)+' 专业合计 '+mC+' 门</td><td>'+mCr+'</td></tr>';
+      gC+=mC;gCr+=mCr;
+    });
+    out+='<tr><td colspan="6"></td><td>全项目合计 '+gC+' 门</td><td>'+gCr+'</td></tr>';
+    return '<table border="1">'+out+'</table>';
   }
 
   // tabs
