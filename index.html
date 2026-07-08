@@ -129,6 +129,14 @@
   .pill-demo{display:inline-block;font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;background:var(--amber-soft);color:var(--amber);padding:.2em .6em;border-radius:20px;margin-left:.5rem;vertical-align:middle;}
   @media (max-width:560px){.form-grid,.form-grid.three{grid-template-columns:1fr;}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+  @media print{
+    .top,.card,.sticky,.toast,.out-actions{display:none!important;}
+    body{background:#fff;}
+    .page{padding:0;}
+    #output{margin:0;}
+    .out-card{box-shadow:none!important;border:none!important;padding:0!important;}
+    .o-major,table.out{page-break-inside:avoid;}
+  }
 </style>
 </head>
 <body>
@@ -484,8 +492,10 @@
       m.blocks[b].push(c);
     });
     var gCount=0,gCredit=0;
+    var _d=new Date(),_p=function(n){return(n<10?'0':'')+n;};
+    var dateStr=_d.getFullYear()+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate());
     var html='<div class="out-card"><div class="out-head"><div class="t">课程架构表</div><div class="m">'+
-      '<span>合作学校 · '+school+'</span><span>合作项目 · '+project+'</span></div></div>';
+      '<span>合作学校 · '+school+'</span><span>合作项目 · '+project+'</span><span>制表日期 · '+dateStr+'</span></div></div>';
     majors.forEach(function(m){
       var mCount=0,mCredit=0;
       html+='<div class="o-major"><div class="o-major-h"><span>'+esc(m.dept)+'</span><span class="yr">'+esc(m.ver)+' 版本</span></div>';
