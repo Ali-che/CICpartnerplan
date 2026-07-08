@@ -97,7 +97,7 @@
       <div class="eyebrow">Admin · 管理后台</div>
       <h1>合作校帐号与项目管理</h1>
     </div>
-    <a href="./index.html">← 前往学校端</a>
+    <a href="./index.html" id="logoutA">登出</a>
   </div>
 
   <!-- 登入 -->
@@ -355,6 +355,15 @@
     var inp=$('#apin');var show=inp.type==='password';
     inp.type=show?'text':'password';this.textContent=show?'🙈':'👁';inp.focus();
   });
+  $('#logoutA').addEventListener('click',function(e){e.preventDefault();try{sessionStorage.clear();}catch(_){}window.location.href='./index.html';});
+
+  // 从统一登入页带过来的管理员 → 自动登入
+  try{
+    if(sessionStorage.getItem('pcp_role')==='admin'){
+      var sp=sessionStorage.getItem('pcp_pin');
+      if(sp){$('#apin').value=sp;login();}
+    }
+  }catch(e){}
   $('#addBtn').addEventListener('click',addPartner);
   $('#bmSave').addEventListener('click',saveBlocks);
   $('#bmCancel').addEventListener('click',closeBlockEditor);

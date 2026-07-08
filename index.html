@@ -151,14 +151,14 @@
       <p class="sub">合作校老师从课程库（catalog）勾选课程，生成分专业、分模块的课程架构表。</p>
       <div class="flowline">流程 · <b>登入</b> → 填资料 → <b>选专业</b> → <b>选版本</b> → 勾课 → 生成结构表</div>
     </div>
-    <a class="admin-link" href="./admin.html">⚙ 管理员</a>
+    <a class="admin-link" id="logoutLink" href="#" style="display:none;">登出</a>
   </div>
 
   <!-- Step 0: 学校登入 -->
   <div class="card">
-    <div class="card-label"><span class="step cfg">0</span>学校登入</div>
+    <div class="card-label"><span class="step cfg">0</span>登入</div>
     <div class="conn-row">
-      <div class="fld"><label for="pin">学校登入 PIN</label><div class="pw-wrap"><input id="pin" class="mono" type="password" placeholder="输入贵校的登入 PIN" autocomplete="off" /><button type="button" class="pw-eye" id="pinEye" aria-label="显示或隐藏 PIN">👁</button></div></div>
+      <div class="fld"><label for="pin">登入 PIN</label><div class="pw-wrap"><input id="pin" class="mono" type="password" placeholder="输入你的 PIN" autocomplete="off" /><button type="button" class="pw-eye" id="pinEye" aria-label="显示或隐藏 PIN">👁</button></div></div>
       <button class="btn" id="connectBtn">登入</button>
     </div>
     <label class="cb" style="margin-top:.6rem;"><input type="checkbox" id="rememberPin" /> 在这台电脑记住 PIN</label>
@@ -170,7 +170,7 @@
       </div>
     </details>
     <div class="status" id="connStatus"></div>
-    <p class="hint">用贵校<b>专属 PIN</b> 登入，只看得到自己的项目（与排课系统完全分开）。没有 PIN 请向管理员索取。</p>
+    <p class="hint">输入你的 PIN 登入：<b>学校 PIN</b> → 进入勾课；<b>管理员 PIN</b> → 自动进入后台。没有 PIN 请向管理员索取。</p>
   </div>
 
   <div id="appArea" style="display:none;">
@@ -308,6 +308,10 @@
       if(!res.ok){return res.text().then(function(t){throw new Error('HTTP '+res.status+' '+t.slice(0,120));});}
       return res.json();
     }).then(function(data){
+      if(data&&data.error){
+        setStatus('err','登入失败：PIN 无效或已停用。');
+        $('#connectBtn').disabled=false;return;
+      }
       var out=extractCatalog(data);
       if(!out.rows.length){
         setStatus('err','已连接，但没找到 catalog 数据。返回的字段有：<b>'+esc(out.keys.join(', '))+'</b>。请把这行发给我，我调整读取路径。');
@@ -320,11 +324,30 @@
       setMode();populateDept();
       $('#appArea').style.display='';
       $('#myProjectsCard').style.display='';
+      $('#logoutLink').style.display='';
       loadProjectList();updateTally();
     }).catch(function(err){
       setStatus('err','连接失败：'+esc(err.message)+'<br>可能是 PIN 错误、网络问题，或 partner_authenticate 尚未在 Supabase 建好。');
       $('#connectBtn').disabled=false;
     });
+  }
+
+  // 统一登入：先验管理员 PIN，是则跳后台；否则走学校流程
+  function login(){
+    var pin=$('#pin').value.trim();
+    if(!pin){setStatus('err','请输入登入 PIN。');return;}
+    setStatus('info','登入中…');$('#connectBtn').disabled=true;
+    rpc('admin_authenticate',{p_admin:pin}).then(function(d){
+      if(d&&d.ok&&!d.error){
+        try{sessionStorage.setItem('pcp_role','admin');sessionStorage.setItem('pcp_pin',pin);}catch(e){}
+        window.location.href='./admin.html';return;
+      }
+      $('#connectBtn').disabled=false;connect();      // 不是管理员 → 学校流程
+    }).catch(function(){ $('#connectBtn').disabled=false;connect(); });
+  }
+  function logout(){
+    try{sessionStorage.clear();localStorage.removeItem('cpp_pin');}catch(e){}
+    window.location.reload();
   }
 
   // ---------- 下拉 ----------
@@ -526,8 +549,9 @@
   }
 
   // ---------- 事件 ----------
-  $('#connectBtn').addEventListener('click',connect);
-  $('#pin').addEventListener('keydown',function(e){if(e.key==='Enter')connect();});
+  $('#connectBtn').addEventListener('click',login);
+  $('#pin').addEventListener('keydown',function(e){if(e.key==='Enter')login();});
+  $('#logoutLink').addEventListener('click',function(e){e.preventDefault();logout();});
   $('#pinEye').addEventListener('click',function(){
     var inp=$('#pin');var show=inp.type==='password';
     inp.type=show?'text':'password';this.textContent=show?'🙈':'👁';inp.focus();
