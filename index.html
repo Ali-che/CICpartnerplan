@@ -17,7 +17,9 @@
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:15px;-webkit-font-smoothing:antialiased;}
   .page{padding:clamp(1.2rem,3vw,2.5rem) 1rem 6rem;}
   .wrap{max-width:900px;margin:0 auto;}
-  .top{border-top:3px solid var(--ink);padding-top:1.1rem;margin-bottom:1.4rem;}
+  .top{border-top:3px solid var(--ink);padding-top:1.1rem;margin-bottom:1.4rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;}
+  .admin-link{font-size:.8rem;font-weight:600;color:var(--accent-deep);text-decoration:none;border:1px solid var(--border-strong);background:var(--surface);padding:.4rem .8rem;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+  .admin-link:hover{background:var(--accent-soft);}
   .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;}
   h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.4rem,4vw,2rem);margin:0 0 .3rem;letter-spacing:-.01em;}
   .sub{color:var(--muted);font-size:.9rem;margin:0;}
@@ -129,15 +131,18 @@
 <div class="wrap">
 
   <div class="top">
-    <div class="eyebrow">Partner Course Planner · 校校合作</div>
-    <h1>校校合作课程规划系统<span class="pill-demo" id="modeTag">未登入</span></h1>
-    <p class="sub">合作校老师从课程库（catalog）勾选课程，生成分专业、分模块的课程架构表。</p>
-    <div class="flowline">流程 · <b>连接</b> → 填资料 → <b>选专业</b> → <b>选版本</b> → 勾课 → 生成结构表</div>
+    <div class="top-main">
+      <div class="eyebrow">Partner Course Planner · 校校合作</div>
+      <h1>校校合作课程规划系统<span class="pill-demo" id="modeTag">未登入</span></h1>
+      <p class="sub">合作校老师从课程库（catalog）勾选课程，生成分专业、分模块的课程架构表。</p>
+      <div class="flowline">流程 · <b>登入</b> → 填资料 → <b>选专业</b> → <b>选版本</b> → 勾课 → 生成结构表</div>
+    </div>
+    <a class="admin-link" href="./admin.html">⚙ 管理员</a>
   </div>
 
   <!-- Step 0: 学校登入 -->
   <div class="card">
-    <div class="card-label"><span class="step cfg">0</span>学校登入<a href="./admin.html" style="margin-left:auto;font-size:.72rem;color:var(--accent-deep);text-decoration:none;font-weight:600;text-transform:none;letter-spacing:0;">管理员入口 →</a></div>
+    <div class="card-label"><span class="step cfg">0</span>学校登入</div>
     <div class="conn-row">
       <div class="fld"><label for="pin">学校登入 PIN</label><input id="pin" class="mono" type="password" placeholder="输入贵校的登入 PIN" autocomplete="off" /></div>
       <button class="btn" id="connectBtn">登入</button>
