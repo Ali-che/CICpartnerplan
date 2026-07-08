@@ -85,6 +85,35 @@
   .block-item:hover{background:var(--paper);}
   .block-item input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0;}
   .modal-actions{display:flex;gap:.5rem;align-items:center;}
+  /* 导出用课程架构表 */
+  #printArea{display:none;}
+  .out-card{padding:.5rem;}
+  .out-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;padding-bottom:1rem;border-bottom:2px solid var(--ink);margin-bottom:1.1rem;}
+  .out-head .t{font-family:var(--serif);font-size:1.2rem;font-weight:600;}
+  .out-head .m{font-family:var(--mono);font-size:.74rem;color:var(--muted);text-align:right;}
+  .out-head .m span{display:block;}
+  .o-major{margin-bottom:1.4rem;}
+  .o-major-h{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;background:var(--accent-soft);color:var(--accent-deep);font-weight:700;padding:.45rem .75rem;border-radius:5px;margin-bottom:.5rem;}
+  .o-major-h .yr{font-family:var(--mono);font-size:.66rem;background:var(--surface);border:1px solid var(--border-strong);padding:.15em .6em;border-radius:20px;}
+  .o-block{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:.7rem 0 .3rem;}
+  table.out{width:100%;border-collapse:collapse;font-size:.85rem;}
+  table.out th,table.out td{padding:.38rem .5rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  table.out th{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+  table.out td.code{font-family:var(--mono);font-size:.76rem;color:var(--muted);white-space:nowrap;}
+  table.out td.en{color:var(--muted);font-style:italic;font-size:.78rem;}
+  table.out td.map{font-family:var(--mono);font-size:.72rem;color:var(--amber);}
+  table.out td.num,table.out th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tr.subtotal td{font-weight:700;border-top:1px solid var(--border-strong);border-bottom:none;color:var(--ink-soft);font-size:.8rem;}
+  .o-major-total{text-align:right;font-family:var(--mono);font-size:.82rem;font-weight:700;color:var(--accent-deep);margin-top:.6rem;padding-top:.5rem;border-top:1px dashed var(--border-strong);}
+  .o-major-total b{color:var(--amber);}
+  .grand{display:flex;justify-content:flex-end;gap:2rem;margin-top:1.1rem;padding-top:1rem;border-top:2px solid var(--ink);font-family:var(--mono);font-size:.9rem;flex-wrap:wrap;}
+  .grand b{color:var(--accent-deep);font-size:1.15rem;}
+  @media print{
+    .page,.modal-bg,.toast{display:none!important;}
+    #printArea{display:block!important;}
+    body{background:#fff;}
+    .o-major,table.out{page-break-inside:avoid;}
+  }
   @media (max-width:560px){.stats{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -154,7 +183,7 @@
       <div class="card">
         <div class="card-label">所有合作校的项目</div>
         <div class="table-scroll"><table id="projTable"><thead>
-          <tr><th>项目</th><th>学校</th><th>专业·版本</th><th style="text-align:center">课数</th><th>更新时间</th></tr>
+          <tr><th>项目</th><th>学校</th><th>专业·版本</th><th style="text-align:center">课数</th><th>更新时间</th><th>操作</th></tr>
         </thead><tbody></tbody></table></div>
       </div>
     </div>
@@ -179,6 +208,7 @@
   </div>
 </div>
 
+<div id="printArea"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -324,7 +354,7 @@
       var list=(d&&d.projects)||[];
       $('#sProjects').textContent=list.length;
       var tb=$('#projTable').querySelector('tbody');
-      if(!list.length){tb.innerHTML='<tr><td colspan="5" class="empty">还没有任何项目。</td></tr>';return;}
+      if(!list.length){tb.innerHTML='<tr><td colspan="6" class="empty">还没有任何项目。</td></tr>';return;}
       tb.innerHTML='';
       list.forEach(function(p){
         var d2=(p.updated_at||'').replace('T',' ').slice(0,16);
@@ -333,10 +363,57 @@
           '<td>'+esc(p.school_name||p.pin)+'</td>'+
           '<td class="mono">'+esc(p.dept||'')+' · '+esc(p.version||'')+'</td>'+
           '<td class="num">'+(p.course_count||0)+'</td>'+
-          '<td class="mono">'+esc(d2)+'</td>';
+          '<td class="mono">'+esc(d2)+'</td>'+
+          '<td><button class="mini" data-export="'+esc(p.id)+'">导出 PDF</button></td>';
         tb.appendChild(tr);
       });
+      tb.querySelectorAll('[data-export]').forEach(function(b){b.addEventListener('click',function(){exportProject(b.getAttribute('data-export'));});});
     }).catch(function(){});
+  }
+
+  // ---------- 导出某项目的课程架构表 ----------
+  function exportProject(id){
+    toast('准备导出…');
+    rpc('admin_load_project',{p_admin:adminPin,p_id:id}).then(function(p){
+      if(!p||p.error){toast('载入失败：'+((p&&p.error)||'未知'));return;}
+      $('#printArea').innerHTML=buildStructure(p);
+      setTimeout(function(){window.print();},80);
+    }).catch(function(e){toast('失败：'+e.message);});
+  }
+  function buildStructure(p){
+    var rows=p.payload||[];
+    var _d=new Date(),_p=function(n){return(n<10?'0':'')+n;};
+    var dateStr=_d.getFullYear()+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate());
+    var majors=[],mIdx={};
+    rows.forEach(function(c){
+      var mk=(c.dept||'')+' · '+(c.version||'');
+      if(!mIdx[mk]){mIdx[mk]={dept:c.dept||'',ver:c.version||'',blocks:{},order:[]};majors.push(mIdx[mk]);}
+      var m=mIdx[mk],b=c.block||'未分类';
+      if(!m.blocks[b]){m.blocks[b]=[];m.order.push(b);}
+      m.blocks[b].push(c);
+    });
+    var gCount=0,gCredit=0;
+    var html='<div class="out-card"><div class="out-head"><div class="t">课程架构表</div><div class="m">'+
+      '<span>合作学校 · '+esc(p.school_name||p.pin||'')+'</span><span>合作项目 · '+esc(p.project_name||'（未命名）')+'</span><span>制表日期 · '+dateStr+'</span></div></div>';
+    majors.forEach(function(m){
+      var mCount=0,mCredit=0;
+      html+='<div class="o-major"><div class="o-major-h"><span>'+esc(m.dept)+'</span><span class="yr">'+esc(m.ver)+' 版本</span></div>';
+      m.order.forEach(function(b){
+        var rs=m.blocks[b],cCredit=0;
+        html+='<div class="o-block">'+esc(b)+'</div><table class="out"><thead><tr><th>代码</th><th>课程名称（中）</th><th>课程名称（英）</th><th>对接</th><th class="num">学分</th></tr></thead><tbody>';
+        rs.forEach(function(c){
+          var cr=parseFloat(c.credit)||0;
+          html+='<tr><td class="code">'+esc(c.code||'')+'</td><td>'+esc(c.zh||'')+'</td><td class="en">'+esc(c.en||'')+'</td><td class="map">'+esc(c.map||'')+'</td><td class="num">'+cr+'</td></tr>';
+          cCredit+=cr;
+        });
+        html+='<tr class="subtotal"><td colspan="2">小计</td><td class="num">'+rs.length+' 门</td><td></td><td class="num">'+cCredit+'</td></tr></tbody></table>';
+        mCount+=rs.length;mCredit+=cCredit;
+      });
+      html+='<div class="o-major-total">'+esc(m.dept)+' · 专业合计　总课数 <b>'+mCount+'</b> 门　总学分 <b>'+mCredit+'</b></div></div>';
+      gCount+=mCount;gCredit+=mCredit;
+    });
+    html+='<div class="grand"><span>全项目合计 &nbsp;<b>'+gCount+'</b> 门课</span><span>总学分 &nbsp;<b>'+gCredit+'</b></span></div></div>';
+    return html;
   }
 
   // tabs
