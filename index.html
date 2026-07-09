@@ -214,8 +214,8 @@
       <span>共 <b id="tCredit">0</b> 学分</span>
     </div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-      <button class="btn sticky-ghost" id="saveBtn" disabled title="需先连接">保存</button>
-      <button class="btn sticky-ghost" id="saveAsBtn" disabled title="需先连接">另存为新</button>
+      <button class="btn sticky-ghost" id="saveBtn" disabled>保存</button>
+      <button class="btn sticky-ghost" id="saveAsBtn" disabled style="display:none;">另存为新</button>
       <button class="btn" id="genBtn" disabled>生成课程架构表 →</button>
     </div>
   </div>
@@ -411,6 +411,9 @@
     var canSave=connected&&sel.length>0;
     $('#saveBtn').disabled=!canSave;
     $('#saveAsBtn').disabled=!canSave;
+    var editing=!!curProjectId;                    // 载入旧项目时才显示「另存为新」
+    $('#saveAsBtn').style.display=editing?'':'none';
+    $('#saveBtn').textContent=editing?'保存更新':'保存';
   }
 
   // ---------- Supabase RPC 小工具 ----------
