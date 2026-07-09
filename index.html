@@ -247,8 +247,7 @@
     credit:function(c){return num(c.credit!=null?c.credit:(c.course_cr!=null?c.course_cr:(c.cr!=null?c.cr:(c.credits!=null?c.credits:0))));},
     map:function(c){return c.map!=null?c.map:(c.mapping!=null?c.mapping:'');},
     desc:function(c){
-      var v=c.note||c.desc||c.description||c.intro||c.summary||c.remark||c.course_desc
-        ||c.content||c.syllabus||c.outline||c.intro_zh||c.desc_zh||c.note_zh||c.memo||c.course_intro||'';
+      var v=c.description||c.desc||c.desc_zh||c.intro||c.summary||c.content||c.syllabus||c.outline||c.course_desc||c.course_intro||'';
       return String(v).trim();
     },
     id:function(c){return c.id!=null?String(c.id):(F.dept(c)+'|'+F.ver(c)+'|'+F.code(c));}
